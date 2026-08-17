@@ -16,7 +16,7 @@ export interface AgentResult {
   ok: boolean;
   outcome: "success" | "timeout" | "unavailable" | "transient" | "rejected";
   summary: string;
-  detail?: string;
+  detail?: string | undefined;
   /** Provenance recorded by the gateway for every execution. */
   provenance: {
     agentId: string;
