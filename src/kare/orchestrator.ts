@@ -276,6 +276,8 @@ export class Orchestrator {
         );
         if (!hasPassingRun) {
           this.transition(task, "DIAGNOSE", "no execution evidence: PASS withheld");
+          task.correctionsUsed += 1;
+          this.transition(task, "CORRECT", "re-running to obtain execution evidence");
           continue;
         }
         task.verdict = "pass";
