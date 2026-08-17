@@ -1,0 +1,68 @@
+{
+  "configVersion": "kare-config/v1",
+  "revision": 1,
+  "agents": [
+    {
+      "agentId": "jarvis-external",
+      "displayName": "JARVIS (external API · MOCK adapter)",
+      "kind": "external-api",
+      "isMock": true,
+      "capabilities": ["engineering.inspect", "engineering.change", "engineering.test"],
+      "requiredScopes": ["kare:execute"],
+      "credentialRef": null,
+      "endpointRef": "endpoint.jarvis.primary",
+      "policyRef": "policy.external.standard",
+      "enabled": true
+    },
+    {
+      "agentId": "kare-analyzer",
+      "displayName": "K-ARE local analyzer",
+      "kind": "internal",
+      "isMock": true,
+      "capabilities": ["engineering.inspect", "analysis.report"],
+      "requiredScopes": ["kare:execute"],
+      "credentialRef": null,
+      "endpointRef": null,
+      "policyRef": "policy.internal.fast",
+      "enabled": true
+    }
+  ],
+  "policies": [
+    {
+      "policyRef": "policy.external.standard",
+      "timeoutMs": 30000,
+      "retry": {
+        "maxAttempts": 3,
+        "initialBackoffMs": 250,
+        "backoffMultiplier": 2,
+        "retryableOutcomes": ["timeout", "unavailable", "transient"]
+      },
+      "circuit": { "failureThreshold": 4, "openDurationMs": 30000, "halfOpenProbes": 1 },
+      "allowDegradedRouting": false
+    },
+    {
+      "policyRef": "policy.internal.fast",
+      "timeoutMs": 8000,
+      "retry": {
+        "maxAttempts": 2,
+        "initialBackoffMs": 100,
+        "backoffMultiplier": 2,
+        "retryableOutcomes": ["transient"]
+      },
+      "circuit": { "failureThreshold": 3, "openDurationMs": 15000, "halfOpenProbes": 1 },
+      "allowDegradedRouting": true
+    }
+  ],
+  "correction": {
+    "maxCorrectionAttempts": 2,
+    "approvalRequiredFor": ["high", "critical"],
+    "rollbackRequiredFor": ["critical"],
+    "allowDestructiveActions": false
+  },
+  "routing": {
+    "engineering.inspect": ["kare-analyzer", "jarvis-external"],
+    "engineering.change": ["jarvis-external"],
+    "engineering.test": ["jarvis-external"],
+    "analysis.report": ["kare-analyzer"]
+  }
+}
