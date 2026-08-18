@@ -27,6 +27,9 @@ export interface AgentResult {
     attempt: number;
     startedAt: string;
     finishedAt: string;
+    configVersion: string;
+    configRevision: number;
+    configSource: string;
   };
 }
 
@@ -222,10 +225,9 @@ export class AgentGateway {
     await this.refreshHealth();
 
     // Policy is resolved from configuration, never from source constants.
-    const defaultPolicyRef = this.resolved.config.policies[0]!.policyRef;
-    const preliminary = this.resolved.policyFor(defaultPolicyRef);
+    const preliminary = this.resolved.selectionPolicy(task.requestId);
     const descriptor = this.select(task.capability, preliminary);
-    const policy = this.resolved.policyFor(descriptor.policyRef);
+    const policy = this.resolved.policyFor(descriptor.policyRef, task.requestId);
 
     this.authorize(descriptor, input.scopes);
 
@@ -285,6 +287,9 @@ export class AgentGateway {
         attempt,
         startedAt,
         finishedAt: new Date().toISOString(),
+        configVersion: this.resolved.provenance.configVersion,
+        configRevision: this.resolved.provenance.revision,
+        configSource: this.resolved.source,
       },
     };
 
