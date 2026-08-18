@@ -1,5 +1,5 @@
 import type { AgentAdapter, AgentTask } from "../gateway";
-import type { HealthState } from "../domain";
+import type { HealthState, SimulatedStep } from "../domain";
 
 /**
  * MOCK external JARVIS adapter — LABELLED MOCK ON PURPOSE.
@@ -16,7 +16,12 @@ export interface ExternalApiTransport {
     credentialRef: string | null;
     task: AgentTask;
     timeoutMs: number;
-  }): Promise<{ ok: boolean; outcome: "success" | "timeout" | "unavailable" | "transient" | "rejected"; summary: string; detail?: string }>;
+  }): Promise<{
+    ok: boolean;
+    outcome: "success" | "timeout" | "unavailable" | "transient" | "rejected";
+    summary: string;
+    detail?: string;
+  }>;
 }
 
 export class MockExternalAgentAdapter implements AgentAdapter {
@@ -24,10 +29,12 @@ export class MockExternalAgentAdapter implements AgentAdapter {
 
   constructor(
     public readonly agentId: string,
+    /** Endpoint reference from configuration; there is no source-level default. */
     private readonly endpointRef: string,
     private readonly credentialRef: string | null,
     private readonly transport: ExternalApiTransport,
-    private readonly healthState: () => HealthState = () => "healthy",
+    /** Health is supplied by the caller from configuration/probe, never defaulted. */
+    private readonly healthState: () => HealthState,
   ) {}
 
   async health(): Promise<HealthState> {
@@ -50,17 +57,16 @@ export class MockExternalAgentAdapter implements AgentAdapter {
   }
 }
 
-/** Deterministic in-process transport used by tests and the seeded demo console. */
+/**
+ * Deterministic in-process transport. The script is required — it comes from the
+ * configuration document's simulation profile, not from a source constant.
+ */
 export class SimulatedTransport implements ExternalApiTransport {
-  constructor(
-    private readonly script: Array<{
-      ok: boolean;
-      outcome: "success" | "timeout" | "unavailable" | "transient" | "rejected";
-      summary: string;
-    }> = [{ ok: true, outcome: "success", summary: "inspection completed" }],
-  ) {}
-
   private index = 0;
+
+  constructor(private readonly script: SimulatedStep[]) {
+    if (script.length === 0) throw new Error("SimulatedTransport requires a configured script");
+  }
 
   async call() {
     const step = this.script[Math.min(this.index, this.script.length - 1)]!;
