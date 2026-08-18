@@ -1,6 +1,7 @@
 import {
   KareConfigSchema,
   type ConfigProvenance,
+  type CorrectionPolicy,
   type CredentialPolicy,
   type ExecutionPolicy,
   type KareConfig,
@@ -53,6 +54,7 @@ export interface ResolvedConfig {
   selectionPolicy(ref?: string): ExecutionPolicy;
   agentsForCapability(capability: string, ref?: string): string[];
   credentialPolicy(ref?: string): CredentialPolicy;
+  correctionPolicy(ref?: string): CorrectionPolicy;
   simulationFor(agentId: string, ref?: string): { health: HealthState; script: SimulatedStep[] };
   consumptions(): ConfigConsumption[];
 }
@@ -171,6 +173,10 @@ export function resolveConfig(provider: ConfigProvider): ResolvedConfig {
     credentialPolicy(ref) {
       record("credentials", null, ref);
       return config.credentials;
+    },
+    correctionPolicy(ref) {
+      record("correction", null, ref);
+      return config.correction;
     },
     simulationFor(agentId, ref) {
       const sim = config.simulation.agents[agentId];
