@@ -98,14 +98,53 @@ export const CorrectionPolicySchema = z.object({
 export type CorrectionPolicy = z.infer<typeof CorrectionPolicySchema>;
 
 /** ------------------------------------------------------- configuration */
+export const ConfigProvenanceSchema = z.object({
+  source: z.string().min(1),
+  publishedAt: z.string().min(1),
+  publishedBy: z.string().min(1),
+  /** Published documents are immutable; a change requires a new revision. */
+  immutable: z.literal(true),
+});
+export type ConfigProvenance = z.infer<typeof ConfigProvenanceSchema>;
+
+export const ConfigDefaultsSchema = z.object({
+  /** Policy used for candidate selection before the agent's own policy applies. */
+  selectionPolicyRef: z.string().min(1),
+});
+
+export const CredentialPolicySchema = z.object({
+  minSecretLength: z.number().int().min(1),
+  allowedNamespaces: z.array(z.string().min(1)).min(1),
+});
+export type CredentialPolicy = z.infer<typeof CredentialPolicySchema>;
+
+/** Mock-transport behaviour is configuration, so no simulated value lives in source. */
+export const SimulatedStepSchema = z.object({
+  ok: z.boolean(),
+  outcome: z.enum(["success", "timeout", "unavailable", "transient", "rejected"]),
+  summary: z.string().min(1),
+});
+export type SimulatedStep = z.infer<typeof SimulatedStepSchema>;
+
+export const SimulationSchema = z.object({
+  agents: z.record(
+    z.string().min(1),
+    z.object({ health: HealthStateSchema, script: z.array(SimulatedStepSchema).min(1) }),
+  ),
+});
+
 export const KareConfigSchema = z.object({
-  configVersion: z.string().min(1),
+  configVersion: z.string().regex(/^kare-config\/v\d+$/, "configVersion must be kare-config/vN"),
   revision: z.number().int().min(1),
+  provenance: ConfigProvenanceSchema,
+  defaults: ConfigDefaultsSchema,
+  credentials: CredentialPolicySchema,
   agents: z.array(AgentDescriptorSchema),
   policies: z.array(ExecutionPolicySchema).min(1),
   correction: CorrectionPolicySchema,
   /** Capability -> ordered preferred agent ids (routing table is configuration). */
   routing: z.record(z.string(), z.array(z.string().min(1)).min(1)),
+  simulation: SimulationSchema,
 });
 export type KareConfig = z.infer<typeof KareConfigSchema>;
 

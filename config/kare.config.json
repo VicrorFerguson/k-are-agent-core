@@ -1,6 +1,19 @@
 {
   "configVersion": "kare-config/v1",
-  "revision": 1,
+  "revision": 2,
+  "provenance": {
+    "source": "config/kare.config.json",
+    "publishedAt": "2026-08-18T00:00:00.000Z",
+    "publishedBy": "kare-platform-operator",
+    "immutable": true
+  },
+  "defaults": {
+    "selectionPolicyRef": "policy.internal.fast"
+  },
+  "credentials": {
+    "minSecretLength": 16,
+    "allowedNamespaces": ["kare-dev", "kare-staging", "kare-prod"]
+  },
   "agents": [
     {
       "agentId": "jarvis-external",
@@ -22,7 +35,7 @@
       "capabilities": ["engineering.inspect", "analysis.report"],
       "requiredScopes": ["kare:execute"],
       "credentialRef": null,
-      "endpointRef": null,
+      "endpointRef": "endpoint.kare.analyzer.local",
       "policyRef": "policy.internal.fast",
       "enabled": true
     }
@@ -64,5 +77,17 @@
     "engineering.change": ["jarvis-external"],
     "engineering.test": ["jarvis-external"],
     "analysis.report": ["kare-analyzer"]
+  },
+  "simulation": {
+    "agents": {
+      "jarvis-external": {
+        "health": "healthy",
+        "script": [{ "ok": true, "outcome": "success", "summary": "external API task completed" }]
+      },
+      "kare-analyzer": {
+        "health": "healthy",
+        "script": [{ "ok": true, "outcome": "success", "summary": "local analysis completed" }]
+      }
+    }
   }
 }

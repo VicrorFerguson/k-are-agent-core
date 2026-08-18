@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AuditSink } from "./audit";
+import type { CredentialPolicy } from "./domain";
 import { KareError } from "./errors";
 
 /**
@@ -62,6 +63,8 @@ export interface CredentialValidator {
   validate(input: {
     provider: string;
     secret: string;
+    /** Threshold supplied by configuration; never a source constant. */
+    minSecretLength: number;
   }): Promise<{ ok: boolean; reason?: string }>;
 }
 
@@ -82,6 +85,8 @@ export class CredentialGateway {
     private readonly manager: SecretManager,
     private readonly audit: AuditSink,
     private readonly validator: CredentialValidator,
+    /** Credential policy comes from the versioned configuration authority. */
+    private readonly policy: () => CredentialPolicy,
   ) {}
 
   async connect(input: unknown): Promise<CredentialRecord> {
@@ -93,10 +98,37 @@ export class CredentialGateway {
     }
     const req = parsed.data;
 
+    const policy = this.policy();
+    if (!policy.allowedNamespaces.includes(req.namespace)) {
+      this.audit.record({
+        actorId: req.actorId,
+        action: "credential.connect",
+        subject: req.namespace,
+        outcome: "denied",
+        metadata: { provider: req.provider, reason: "namespace not allowed by policy" },
+      });
+      throw new KareError("unauthorized", `Namespace "${req.namespace}" is not allowed.`, {
+        allowedNamespaces: policy.allowedNamespaces,
+      });
+    }
+
     const validation = await this.validator.validate({
       provider: req.provider,
       secret: req.secret,
+      minSecretLength: policy.minSecretLength,
     });
+    if (!validation.ok) {
+      this.audit.record({
+        actorId: req.actorId,
+        action: "credential.connect",
+        subject: req.provider,
+        outcome: "denied",
+        metadata: { provider: req.provider, reason: validation.reason ?? "validation failed" },
+      });
+      throw new KareError("credential_unavailable", "Credential failed validation.", {
+        reason: validation.reason ?? null,
+      });
+    }
 
     const credentialRef = `cred_${req.namespace}_${req.provider}_${++this.seq}`;
     await this.manager.put(req.namespace, credentialRef, req.secret);

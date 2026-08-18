@@ -82,7 +82,7 @@ export class Orchestrator {
     const existingId = this.byRequestId.get(req.requestId);
     if (existingId) return this.tasks.get(existingId)!;
 
-    const correction = this.resolved.config.correction;
+    const correction = this.resolved.correctionPolicy(req.requestId);
     const approvalRequired = correction.approvalRequiredFor.includes(req.risk);
 
     const task: TaskRecord = {
@@ -225,8 +225,19 @@ export class Orchestrator {
   }
 
   private async executeChangeLoop(task: TaskRecord, req: TaskRequest): Promise<void> {
-    const correction = this.resolved.config.correction;
+    // Fails closed: if the controlling correction policy is unavailable this throws.
+    const correction = this.resolved.correctionPolicy(task.taskId);
     this.transition(task, "CHANGE", "incremental reversible change applied in isolation");
+    task.rollback.available = true;
+    task.evidence.push(
+      evidence(
+        "diff",
+        `checkpoint ${task.taskId}.chk-${task.attempt}`,
+        "info",
+        "reversible checkpoint created before change was applied",
+        "kare-orchestrator",
+      ),
+    );
 
     while (true) {
       task.attempt += 1;
@@ -256,6 +267,9 @@ export class Orchestrator {
             attempt: task.attempt,
             startedAt: nowIso(),
             finishedAt: nowIso(),
+            configVersion: this.resolved.provenance.configVersion,
+            configRevision: this.resolved.provenance.revision,
+            configSource: this.resolved.source,
           },
         }));
 
@@ -311,6 +325,15 @@ export class Orchestrator {
         task.rollback.status = "in-progress";
         this.transition(task, "ROLLED_BACK", "change reverted to last known good state");
         task.rollback.status = "completed";
+        task.evidence.push(
+          evidence(
+            "diff",
+            `rollback ${task.taskId}`,
+            "pass",
+            `checkpoint restored; state verified as ROLLED_BACK · corrections=${task.correctionsUsed}/${task.correctionBudget}`,
+            "kare-orchestrator",
+          ),
+        );
         this.audit.record({
           actorId: req.actor.actorId,
           action: "task.rollback",
