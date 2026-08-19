@@ -1,10 +1,10 @@
 # K-ARE Zero-Hardcoding Audit (KF-ARCH-INVARIANT-001)
 
-- Audit ID: `zh-audit-mt0jigvz`
-- Executed: 2026-08-19T20:24:32.255Z
+- Audit ID: `zh-audit-mt0jismh`
+- Executed: 2026-08-19T20:24:47.465Z
 - Scanner: kare-zero-hardcoding-scanner v1.1.0
 - Scope: src/kare, src/routes, scripts (14 files)
-- Findings: 3 · Violations: 3
+- Findings: 1 · Violations: 1
 - **Status: BLOCKED**
 
 ## Classification rule
@@ -29,6 +29,4 @@ which fails closed when the document is missing or invalid.
 
 | ID | Location | Rule | Classification | Remediation / exemption |
 | --- | --- | --- | --- | --- |
-| ZH-001 | `src/kare/credentials.ts:133` | operational-identifier-literal | VIOLATION | resolve the identifier through configuration/policy |
-| ZH-002 | `src/routes/index.tsx:19` | absolute-url | VIOLATION | move endpoint to configuration (endpointRef) |
-| ZH-003 | `scripts/zero-hardcoding-audit.ts:129` | operational-string-fallback | VIOLATION | remove hidden fallback; fail closed instead |
+| ZH-001 | `src/routes/index.tsx:19` | absolute-url | VIOLATION | move endpoint to configuration (endpointRef) |

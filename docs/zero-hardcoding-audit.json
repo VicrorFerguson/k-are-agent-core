@@ -1,6 +1,6 @@
 {
-  "auditId": "zh-audit-mt0jigvz",
-  "timestamp": "2026-08-19T20:24:32.255Z",
+  "auditId": "zh-audit-mt0jismh",
+  "timestamp": "2026-08-19T20:24:47.465Z",
   "invariant": "KF-ARCH-INVARIANT-001",
   "scanner": {
     "name": "kare-zero-hardcoding-scanner",
@@ -15,32 +15,14 @@
   "findings": [
     {
       "id": "ZH-001",
-      "file": "src/kare/credentials.ts",
-      "line": 133,
-      "snippet": "const credentialRef = `cred_${req.namespace}_${req.provider}_${++this.seq}`;",
-      "rule": "operational-identifier-literal",
-      "classification": "VIOLATION",
-      "remediation": "resolve the identifier through configuration/policy"
-    },
-    {
-      "id": "ZH-002",
       "file": "src/routes/index.tsx",
       "line": 19,
       "snippet": "src=\"https://cdn.gpteng.co/blank-app-v1.svg\"",
       "rule": "absolute-url",
       "classification": "VIOLATION",
       "remediation": "move endpoint to configuration (endpointRef)"
-    },
-    {
-      "id": "ZH-003",
-      "file": "scripts/zero-hardcoding-audit.ts",
-      "line": 129,
-      "snippet": "| \\`endpointRef ?? \"endpoint.local\"\\` | \\`agents[].endpointRef\\` (fail closed when null) |",
-      "rule": "operational-string-fallback",
-      "classification": "VIOLATION",
-      "remediation": "remove hidden fallback; fail closed instead"
     }
   ],
-  "violationCount": 3,
+  "violationCount": 1,
   "status": "BLOCKED"
 }

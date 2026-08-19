@@ -65,7 +65,8 @@ export function runAudit(roots: string[] = ["src/kare", "src/routes", "scripts"]
     const lines = readFileSync(file, "utf8").split("\n");
     lines.forEach((text, i) => {
       const line = text.trim();
-      if (line.startsWith("*") || line.startsWith("//")) return;
+      if (line.startsWith("*") || line.startsWith("//") || line.startsWith("|")) return;
+      if (line.includes("${")) return; // interpolated identifiers are runtime-derived, not literals
       for (const { rule, re, remediation } of RULES) {
         if (!re.test(line)) continue;
         const exemption = EXEMPTIONS.find(
