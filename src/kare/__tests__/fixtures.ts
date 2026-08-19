@@ -1,0 +1,20 @@
+import baseDocument from "../../../config/kare.config.json" with { type: "json" };
+import { StaticConfigProvider } from "../config";
+import type { SimulatedStep } from "../domain";
+
+export function doc(): any {
+  return structuredClone(baseDocument);
+}
+
+export function provider(document: unknown, source = "test-fixture") {
+  return new StaticConfigProvider(document, source);
+}
+
+export function withScript(agentId: string, script: SimulatedStep[], health = "healthy") {
+  const d = doc();
+  d.simulation.agents[agentId] = { health, script };
+  return d;
+}
+
+export const OPERATOR = { actorId: "test-operator", scopes: ["kare:execute", "kare:approve"] };
+export const rid = (n: string) => `req-${n}-${"0".repeat(8)}`;
