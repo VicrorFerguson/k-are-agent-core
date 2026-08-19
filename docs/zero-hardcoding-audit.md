@@ -1,10 +1,10 @@
 # K-ARE Zero-Hardcoding Audit (KF-ARCH-INVARIANT-001)
 
-- Audit ID: `zh-audit-mt0jismh`
-- Executed: 2026-08-19T20:24:47.465Z
+- Audit ID: `zh-audit-mt0jlngr`
+- Executed: 2026-08-19T20:27:00.747Z
 - Scanner: kare-zero-hardcoding-scanner v1.1.0
-- Scope: src/kare, src/routes, scripts (14 files)
-- Findings: 1 · Violations: 1
+- Scope: src/kare, src/lib, src/routes, scripts (26 files)
+- Findings: 8 · Violations: 1
 - **Status: BLOCKED**
 
 ## Classification rule
@@ -29,4 +29,11 @@ which fails closed when the document is missing or invalid.
 
 | ID | Location | Rule | Classification | Remediation / exemption |
 | --- | --- | --- | --- | --- |
-| ZH-001 | `src/routes/index.tsx:19` | absolute-url | VIOLATION | move endpoint to configuration (endpointRef) |
+| ZH-001 | `src/kare/__tests__/config.test.ts:70` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-002 | `src/kare/__tests__/credentials.test.ts:16` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-003 | `src/kare/__tests__/credentials.test.ts:22` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-004 | `src/kare/__tests__/credentials.test.ts:55` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-005 | `src/kare/__tests__/credentials.test.ts:76` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-006 | `src/kare/__tests__/gateway.test.ts:125` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-007 | `src/kare/__tests__/orchestrator.test.ts:132` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-008 | `src/routes/index.tsx:19` | absolute-url | VIOLATION | move endpoint to configuration (endpointRef) |
