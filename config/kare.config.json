@@ -1,6 +1,6 @@
 {
   "configVersion": "kare-config/v1",
-  "revision": 2,
+  "revision": 3,
   "provenance": {
     "source": "config/kare.config.json",
     "publishedAt": "2026-08-18T00:00:00.000Z",
@@ -12,16 +12,26 @@
   },
   "credentials": {
     "minSecretLength": 16,
-    "allowedNamespaces": ["kare-dev", "kare-staging", "kare-prod"]
+    "allowedNamespaces": [
+      "kare-dev",
+      "kare-staging",
+      "kare-prod"
+    ]
   },
   "agents": [
     {
       "agentId": "jarvis-external",
-      "displayName": "JARVIS (external API · MOCK adapter)",
+      "displayName": "JARVIS (external API \u00b7 MOCK adapter)",
       "kind": "external-api",
       "isMock": true,
-      "capabilities": ["engineering.inspect", "engineering.change", "engineering.test"],
-      "requiredScopes": ["kare:execute"],
+      "capabilities": [
+        "engineering.inspect",
+        "engineering.change",
+        "engineering.test"
+      ],
+      "requiredScopes": [
+        "kare:execute"
+      ],
       "credentialRef": null,
       "endpointRef": "endpoint.jarvis.primary",
       "policyRef": "policy.external.standard",
@@ -32,8 +42,13 @@
       "displayName": "K-ARE local analyzer",
       "kind": "internal",
       "isMock": true,
-      "capabilities": ["engineering.inspect", "analysis.report"],
-      "requiredScopes": ["kare:execute"],
+      "capabilities": [
+        "engineering.inspect",
+        "analysis.report"
+      ],
+      "requiredScopes": [
+        "kare:execute"
+      ],
       "credentialRef": null,
       "endpointRef": "endpoint.kare.analyzer.local",
       "policyRef": "policy.internal.fast",
@@ -48,9 +63,17 @@
         "maxAttempts": 3,
         "initialBackoffMs": 250,
         "backoffMultiplier": 2,
-        "retryableOutcomes": ["timeout", "unavailable", "transient"]
+        "retryableOutcomes": [
+          "timeout",
+          "unavailable",
+          "transient"
+        ]
       },
-      "circuit": { "failureThreshold": 4, "openDurationMs": 30000, "halfOpenProbes": 1 },
+      "circuit": {
+        "failureThreshold": 4,
+        "openDurationMs": 30000,
+        "halfOpenProbes": 1
+      },
       "allowDegradedRouting": false
     },
     {
@@ -60,34 +83,74 @@
         "maxAttempts": 2,
         "initialBackoffMs": 100,
         "backoffMultiplier": 2,
-        "retryableOutcomes": ["transient"]
+        "retryableOutcomes": [
+          "transient"
+        ]
       },
-      "circuit": { "failureThreshold": 3, "openDurationMs": 15000, "halfOpenProbes": 1 },
+      "circuit": {
+        "failureThreshold": 3,
+        "openDurationMs": 15000,
+        "halfOpenProbes": 1
+      },
       "allowDegradedRouting": true
     }
   ],
   "correction": {
     "maxCorrectionAttempts": 2,
-    "approvalRequiredFor": ["high", "critical"],
-    "rollbackRequiredFor": ["critical"],
+    "approvalRequiredFor": [
+      "high",
+      "critical"
+    ],
+    "rollbackRequiredFor": [
+      "critical"
+    ],
     "allowDestructiveActions": false
   },
   "routing": {
-    "engineering.inspect": ["kare-analyzer", "jarvis-external"],
-    "engineering.change": ["jarvis-external"],
-    "engineering.test": ["jarvis-external"],
-    "analysis.report": ["kare-analyzer"]
+    "engineering.inspect": [
+      "kare-analyzer",
+      "jarvis-external"
+    ],
+    "engineering.change": [
+      "jarvis-external"
+    ],
+    "engineering.test": [
+      "jarvis-external"
+    ],
+    "analysis.report": [
+      "kare-analyzer"
+    ]
   },
   "simulation": {
     "agents": {
       "jarvis-external": {
         "health": "healthy",
-        "script": [{ "ok": true, "outcome": "success", "summary": "external API task completed" }]
+        "script": [
+          {
+            "ok": true,
+            "outcome": "success",
+            "summary": "external API task completed"
+          }
+        ]
       },
       "kare-analyzer": {
         "health": "healthy",
-        "script": [{ "ok": true, "outcome": "success", "summary": "local analysis completed" }]
+        "script": [
+          {
+            "ok": true,
+            "outcome": "success",
+            "summary": "local analysis completed"
+          }
+        ]
       }
     }
+  },
+  "apiBoundary": {
+    "operatorActorId": "operator.console",
+    "operatorScopes": [
+      "kare:execute",
+      "kare:approve",
+      "kare:read"
+    ]
   }
 }

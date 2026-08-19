@@ -118,6 +118,13 @@ export const CredentialPolicySchema = z.object({
 });
 export type CredentialPolicy = z.infer<typeof CredentialPolicySchema>;
 
+/** Identity/scopes the server API boundary acts with (configuration, not source). */
+export const ApiBoundarySchema = z.object({
+  operatorActorId: z.string().min(1),
+  operatorScopes: z.array(z.string().min(1)).min(1),
+});
+export type ApiBoundary = z.infer<typeof ApiBoundarySchema>;
+
 /** Mock-transport behaviour is configuration, so no simulated value lives in source. */
 export const SimulatedStepSchema = z.object({
   ok: z.boolean(),
@@ -139,6 +146,7 @@ export const KareConfigSchema = z.object({
   provenance: ConfigProvenanceSchema,
   defaults: ConfigDefaultsSchema,
   credentials: CredentialPolicySchema,
+  apiBoundary: ApiBoundarySchema,
   agents: z.array(AgentDescriptorSchema),
   policies: z.array(ExecutionPolicySchema).min(1),
   correction: CorrectionPolicySchema,
