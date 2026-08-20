@@ -12,7 +12,7 @@ function harness() {
   const gateway = new CredentialGateway(
     manager,
     audit,
-    async ({ secret, minSecretLength }) => ({ ok: secret.length >= minSecretLength }),
+    { async validate({ secret, minSecretLength }) { return { ok: secret.length >= minSecretLength }; } },
     () => ({ minSecretLength: 16, allowedNamespaces: ["kare-dev"] }),
   );
   return { audit, manager, gateway };
