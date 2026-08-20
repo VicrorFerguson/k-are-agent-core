@@ -1,11 +1,11 @@
 # K-ARE Zero-Hardcoding Audit (KF-ARCH-INVARIANT-001)
 
-- Audit ID: `zh-audit-mt0jlngr`
-- Executed: 2026-08-19T20:27:00.747Z
+- Audit ID: `zh-audit-mt11qu4e`
+- Executed: 2026-08-20T04:54:55.742Z
 - Scanner: kare-zero-hardcoding-scanner v1.1.0
 - Scope: src/kare, src/lib, src/routes, scripts (26 files)
-- Findings: 8 · Violations: 1
-- **Status: BLOCKED**
+- Findings: 7 · Violations: 0
+- **Status: PASS**
 
 ## Classification rule
 
@@ -35,5 +35,4 @@ which fails closed when the document is missing or invalid.
 | ZH-004 | `src/kare/__tests__/credentials.test.ts:55` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
 | ZH-005 | `src/kare/__tests__/credentials.test.ts:76` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
 | ZH-006 | `src/kare/__tests__/gateway.test.ts:125` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
-| ZH-007 | `src/kare/__tests__/orchestrator.test.ts:132` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
-| ZH-008 | `src/routes/index.tsx:19` | absolute-url | VIOLATION | move endpoint to configuration (endpointRef) |
+| ZH-007 | `src/kare/__tests__/orchestrator.test.ts:123` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |

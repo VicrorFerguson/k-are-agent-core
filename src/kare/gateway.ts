@@ -50,6 +50,14 @@ export const AgentTaskSchema = z.object({
   payload: z.record(z.string(), z.unknown()),
 });
 
+/** Untrusted agent/external-API responses are schema validated before use. */
+export const AgentResponseSchema = z.object({
+  ok: z.boolean(),
+  outcome: z.enum(["success", "timeout", "unavailable", "transient", "rejected"]),
+  summary: z.string().min(1),
+  detail: z.string().optional(),
+});
+
 /** ------------------------------------------------------ circuit breaker */
 interface CircuitState {
   failures: number;
@@ -247,7 +255,16 @@ export class AgentGateway {
         });
       }
       try {
-        last = await adapter.execute(task, { timeoutMs: policy.timeoutMs });
+        const raw = await adapter.execute(task, { timeoutMs: policy.timeoutMs });
+        const validated = AgentResponseSchema.safeParse(raw);
+        last = validated.success
+          ? validated.data
+          : {
+              ok: false,
+              outcome: "rejected",
+              summary: "malformed agent response rejected by validation",
+              detail: validated.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+            };
       } catch (error) {
         last = {
           ok: false,

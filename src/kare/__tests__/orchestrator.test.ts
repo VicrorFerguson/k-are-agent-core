@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRuntime } from "../runtime";
 import { canTransition, isTerminal } from "../state-machine";
-import { OPERATOR, doc, provider, rid, withScript } from "./fixtures";
+import { OPERATOR, doc, provider, rid, testFailsEverywhere } from "./fixtures";
 
 function runtime(document: any = doc()) {
   return createRuntime(provider(document));
@@ -100,10 +100,7 @@ describe("orchestrator core loop", () => {
   });
 
   it("bounds correction by the configured budget and then rolls back", async () => {
-    const d = withScript("kare-analyzer", [
-      { ok: true, outcome: "success", summary: "inspection ok" },
-      { ok: false, outcome: "transient", summary: "test failed" },
-    ]);
+    const d = testFailsEverywhere();
     const r = runtime(d);
     const task = await r.orchestrator.submit(req("budget"));
     expect(task.correctionsUsed).toBe(task.correctionBudget);
@@ -114,10 +111,7 @@ describe("orchestrator core loop", () => {
   });
 
   it("cannot reach PASS when no passing test evidence exists", async () => {
-    const d = withScript("kare-analyzer", [
-      { ok: true, outcome: "success", summary: "inspection ok" },
-      { ok: false, outcome: "transient", summary: "test failed" },
-    ]);
+    const d = testFailsEverywhere();
     const r = runtime(d);
     const task = await r.orchestrator.submit(req("nopass"));
     expect(task.verdict).not.toBe("pass");
@@ -125,10 +119,7 @@ describe("orchestrator core loop", () => {
   });
 
   it("executes a full rollback scenario with checkpoint and restore evidence", async () => {
-    const d = withScript("kare-analyzer", [
-      { ok: true, outcome: "success", summary: "inspection ok" },
-      { ok: false, outcome: "transient", summary: "test failed" },
-    ]);
+    const d = testFailsEverywhere();
     d.correction.maxCorrectionAttempts = 0;
     const r = runtime(d);
     const task = await r.orchestrator.submit(req("rollback"));
@@ -142,10 +133,7 @@ describe("orchestrator core loop", () => {
   });
 
   it("rolls back instead of auto-correcting for rollback-mandated risk", async () => {
-    const d = withScript("kare-analyzer", [
-      { ok: true, outcome: "success", summary: "inspection ok" },
-      { ok: false, outcome: "transient", summary: "test failed" },
-    ]);
+    const d = testFailsEverywhere();
     const r = runtime(d);
     const task = await r.orchestrator.submit(req("critrb", { risk: "critical" }));
     const out = await r.orchestrator.decide({

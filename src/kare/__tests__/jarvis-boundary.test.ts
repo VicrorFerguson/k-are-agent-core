@@ -49,6 +49,6 @@ describe("JARVIS boundary + security posture", () => {
 
   it("exposes no secret material through the API boundary", () => {
     const api = readFileSync("src/lib/kare.functions.ts", "utf8");
-    expect(api).not.toMatch(/credentials\.(list|get)\(|manager|\.secret\b/);
+    expect(api).not.toMatch(/SecretManager|credentialGateway|\.secret\b|credentials\./);
   });
 });
