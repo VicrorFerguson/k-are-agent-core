@@ -1,6 +1,6 @@
 {
-  "auditId": "zh-audit-mt11o9a2",
-  "timestamp": "2026-08-20T04:52:55.418Z",
+  "auditId": "zh-audit-mt11qdtt",
+  "timestamp": "2026-08-20T04:54:34.625Z",
   "invariant": "KF-ARCH-INVARIANT-001",
   "scanner": {
     "name": "kare-zero-hardcoding-scanner",
@@ -71,22 +71,13 @@
     {
       "id": "ZH-007",
       "file": "src/kare/__tests__/orchestrator.test.ts",
-      "line": 132,
+      "line": 123,
       "snippet": "d.correction.maxCorrectionAttempts = 0;",
       "rule": "operational-numeric-assignment",
       "classification": "MUTABLE_CONFIGURATION",
       "remediation": "exempt: test fixtures are supplied as configuration documents, never runtime defaults"
-    },
-    {
-      "id": "ZH-008",
-      "file": "src/routes/index.tsx",
-      "line": 19,
-      "snippet": "src=\"https://cdn.gpteng.co/blank-app-v1.svg\"",
-      "rule": "absolute-url",
-      "classification": "VIOLATION",
-      "remediation": "move endpoint to configuration (endpointRef)"
     }
   ],
-  "violationCount": 1,
-  "status": "BLOCKED"
+  "violationCount": 0,
+  "status": "PASS"
 }

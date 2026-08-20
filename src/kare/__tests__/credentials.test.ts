@@ -53,9 +53,9 @@ describe("credential gateway", () => {
 
   it("redacts secret-like metadata keys but keeps references", () => {
     const out = redactMetadata({ apiKey: SECRET, token: SECRET, credentialRef: "cred_x" });
-    expect(out.apiKey).toBe("[redacted]");
-    expect(out.token).toBe("[redacted]");
-    expect(out.credentialRef).toBe("cred_x");
+    expect(out["apiKey"]).toBe("[redacted]");
+    expect(out["token"]).toBe("[redacted]");
+    expect(out["credentialRef"]).toBe("cred_x");
   });
 
   it("rejects a secret below the configured minimum (invalid credential)", async () => {
