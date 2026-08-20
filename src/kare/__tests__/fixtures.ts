@@ -19,15 +19,21 @@ export function withScript(agentId: string, script: SimulatedStep[], health = "h
 export const OPERATOR = { actorId: "test-operator", scopes: ["kare:execute", "kare:approve"] };
 export const rid = (n: string) => `req-${n}-${"0".repeat(8)}`;
 
-/** Both configured agents pass inspection then fail every test run. */
+/** Preferred agent passes inspection then fails; every fallback agent fails too. */
 export function testFailsEverywhere() {
   const d = doc();
-  const script = [
-    { ok: true, outcome: "success", summary: "inspection ok" },
-    { ok: false, outcome: "transient", summary: "test failed" },
-  ];
   for (const id of Object.keys(d.simulation.agents)) {
-    d.simulation.agents[id] = { health: "healthy", script: structuredClone(script) };
+    d.simulation.agents[id] = {
+      health: "healthy",
+      script: [{ ok: false, outcome: "transient", summary: "test failed" }],
+    };
   }
+  d.simulation.agents["kare-analyzer"] = {
+    health: "healthy",
+    script: [
+      { ok: true, outcome: "success", summary: "inspection ok" },
+      { ok: false, outcome: "transient", summary: "test failed" },
+    ],
+  };
   return d;
 }
