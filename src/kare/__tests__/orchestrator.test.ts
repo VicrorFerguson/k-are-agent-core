@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRuntime } from "../runtime";
 import { canTransition, isTerminal } from "../state-machine";
-import { OPERATOR, doc, provider, rid, testFailsEverywhere, withScript } from "./fixtures";
+import { OPERATOR, doc, provider, rid, testFailsEverywhere } from "./fixtures";
 
 function runtime(document: any = doc()) {
   return createRuntime(provider(document));
