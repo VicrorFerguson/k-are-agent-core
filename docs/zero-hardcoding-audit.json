@@ -1,6 +1,6 @@
 {
-  "auditId": "zh-audit-mt2ghtvm",
-  "timestamp": "2026-08-21T04:35:35.938Z",
+  "auditId": "zh-audit-mt2glekr",
+  "timestamp": "2026-08-21T04:38:22.731Z",
   "invariant": "KF-ARCH-INVARIANT-001",
   "scanner": {
     "name": "kare-zero-hardcoding-scanner",
@@ -8,11 +8,10 @@
   },
   "scope": [
     "src/kare",
-    "src/lib",
     "src/routes",
     "scripts"
   ],
-  "filesScanned": 26,
+  "filesScanned": 21,
   "findings": [
     {
       "id": "ZH-001",
