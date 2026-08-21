@@ -1,0 +1,145 @@
+{
+  "verificationId": "kare-slice1-2026-08-21",
+  "executedAt": "2026-08-21T04:55:00.000Z",
+  "sourceRevision": "a67657b",
+  "configuration": {
+    "configVersion": "kare-config/v1",
+    "revision": 3,
+    "source": "config/kare.config.json",
+    "immutable": true,
+    "publishedBy": "kare-platform-operator"
+  },
+  "policyVersionsExercised": ["policy.internal.fast", "policy.external.standard"],
+  "commands": [
+    { "command": "bun run test", "tool": "vitest 3.2.7", "result": "pass" },
+    { "command": "bun run audit:zero-hardcoding", "result": "PASS" },
+    { "command": "bun run build", "tool": "vite + nitro", "result": "success" },
+    {
+      "command": "playwright drive http://localhost:8080/",
+      "result": "console rendered; high-risk task submitted; approval gate; approved; COMPLETED"
+    }
+  ],
+  "tests": {
+    "total": 56,
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0,
+    "suites": {
+      "src/kare/__tests__/config.test.ts": 12,
+      "src/kare/__tests__/gateway.test.ts": 14,
+      "src/kare/__tests__/orchestrator.test.ts": 13,
+      "src/kare/__tests__/credentials.test.ts": 9,
+      "src/kare/__tests__/jarvis-boundary.test.ts": 5,
+      "src/kare/__tests__/zero-hardcoding.test.ts": 3
+    }
+  },
+  "failureInjection": {
+    "status": "pass",
+    "cases": [
+      "missing configuration",
+      "malformed configuration",
+      "schema-invalid configuration",
+      "invalid configVersion",
+      "unsupported configVersion",
+      "missing/invalid provenance",
+      "corrupted references",
+      "protected invariant override",
+      "mutation of published configuration",
+      "all agents unavailable",
+      "agent timeout",
+      "malformed agent response",
+      "retry exhaustion",
+      "circuit breaker open",
+      "unauthorized capability",
+      "invalid task input",
+      "failed test run",
+      "correction budget exhaustion",
+      "approval-required operation and denial",
+      "rollback execution",
+      "invalid credential",
+      "secret exposure attempt"
+    ],
+    "verifiedProperties": [
+      "expected failure",
+      "no unauthorized continuation",
+      "diagnostic emitted",
+      "audit event recorded",
+      "evidence recorded"
+    ]
+  },
+  "securityFindings": [
+    { "id": "SEC-01", "severity": "info", "finding": "no raw secrets in source, config, audit, evidence or API responses", "status": "verified" },
+    { "id": "SEC-02", "severity": "info", "finding": "no eval/new Function/child_process/filesystem execution in runtime source", "status": "verified" },
+    { "id": "SEC-03", "severity": "info", "finding": "no JARVIS implementation, endpoint or credential; no KNOW->JARVIS path", "status": "verified" },
+    { "id": "SEC-04", "severity": "info", "finding": "untrusted agent responses schema validated", "status": "verified" },
+    { "id": "SEC-05", "severity": "warning", "finding": "secret manager is ephemeral in-process; no vault configured", "status": "accepted-labelled" },
+    { "id": "SEC-06", "severity": "warning", "finding": "audit/tasks/credentials are in-memory, non-durable", "status": "accepted-slice1" },
+    { "id": "SEC-07", "severity": "warning", "finding": "API boundary has no end-user authentication; configured operator identity only", "status": "accepted-slice1" },
+    { "id": "SEC-08", "severity": "info", "finding": "approval requires kare:approve; budget and invariants not caller-modifiable", "status": "verified" }
+  ],
+  "zeroHardcoding": {
+    "invariant": "KF-ARCH-INVARIANT-001",
+    "status": "PASS",
+    "findings": 7,
+    "violations": 0,
+    "filesScanned": 21,
+    "artifacts": ["docs/zero-hardcoding-audit.md", "docs/zero-hardcoding-audit.json"],
+    "remediated": [
+      "implicit policies[0] selection policy -> defaults.selectionPolicyRef",
+      "endpointRef ?? 'endpoint.local' -> agents[].endpointRef (fail closed)",
+      "mock transport default script -> simulation.agents[id].script",
+      "mock default health -> simulation.agents[id].health",
+      "credential minimum length 8 -> credentials.minSecretLength",
+      "implicit namespace acceptance -> credentials.allowedNamespaces"
+    ]
+  },
+  "buildResult": { "status": "success", "target": "cloudflare worker via nitro" },
+  "runtimeResult": {
+    "status": "pass",
+    "detail": "shipped configuration boots, both agents register, engineering.inspect executes end to end"
+  },
+  "operatorConsoleResult": {
+    "status": "pass",
+    "route": "/",
+    "placeholderRemoved": true,
+    "observed": [
+      "config version/revision/source",
+      "JARVIS mock label",
+      "agent health",
+      "capability routing order",
+      "task list and active task state",
+      "execution timeline INTAKE..COMPLETED",
+      "evidence with producers",
+      "configuration provenance ledger",
+      "correction budget",
+      "approval gate and decision",
+      "rollback status",
+      "audit log"
+    ]
+  },
+  "rollbackResult": {
+    "status": "pass",
+    "steps": [
+      "checkpoint created",
+      "change applied",
+      "failure detected",
+      "rollback requested",
+      "rollback executed",
+      "restored state verified",
+      "rollback evidence + audit recorded"
+    ]
+  },
+  "provenanceResult": {
+    "status": "pass",
+    "fields": ["configVersion", "revision", "source", "policyRef", "timestamp", "taskOrRequestRef"]
+  },
+  "jarvisIntegration": "MOCK / EXTERNAL ADAPTER CONTRACT ONLY",
+  "sliceStatus": "VERIFIED",
+  "unresolvedRisks": [
+    "no persistence for tasks, audit, evidence, credential records",
+    "ephemeral secret manager; no external vault",
+    "agents are mock adapters; change/test execution is simulated, not sandboxed",
+    "no authentication/RBAC on the HTTP surface",
+    "no production-readiness or compliance claim"
+  ]
+}

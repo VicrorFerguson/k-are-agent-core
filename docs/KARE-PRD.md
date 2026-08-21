@@ -65,3 +65,35 @@ class drives `ROLLING_BACK -> ROLLED_BACK` with an audit record.
 
 ## 11. Evidence requirements
 No claim of PASS, readiness or compliance without recorded execution evidence.
+## 12. Slice 1 implemented architecture (living spec update)
+The following clarifications reflect what Slice 1 actually implements; see
+`docs/KARE-ARCHITECTURE.md` for detail and `evidence/kare-slice1-verification.md`
+for the executed evidence.
+
+- **Configuration is the control plane.** `config/kare.config.json` carries
+  `configVersion` (`kare-config/vN`), `revision`, and a `provenance` block
+  (`source`, `publishedAt`, `publishedBy`, `immutable: true`). It is deep-frozen at
+  resolve time: a published document is immutable and any change requires a new
+  revision. All runtime reads go through `resolveConfig` — application code never
+  imports the document as a static object of behaviour.
+- **Provenance ledger.** Every configuration consumption records config version,
+  revision, source, key, policyRef, timestamp and the task/request reference.
+- **Externalised in this slice.** Selection policy (`defaults.selectionPolicyRef`),
+  agent endpoints (`agents[].endpointRef`, fail closed when null), credential policy
+  (`credentials.minSecretLength`, `credentials.allowedNamespaces`), API-boundary
+  identity/scopes (`apiBoundary`), and mock-agent behaviour (`simulation.agents`).
+  No source-level operational default replaced them.
+- **Bootstrap exception.** Only the supported configuration schema versions and the
+  document location remain in source.
+- **Untrusted responses.** Agent/external-API responses are schema validated; a
+  malformed response is recorded as `rejected` and cannot be read as success.
+- **API boundary.** Typed server functions in `src/lib/kare.functions.ts`: status,
+  task submit/get, approval decision, agent health, evidence, audit. Inputs are
+  schema validated; scopes come from configuration, not from the caller; no secret
+  or secret-manager value is exposed.
+- **Operator console.** `/` renders the K-ARE operator console (status, tasks, state,
+  agent health, capabilities/routing, timeline, evidence, provenance, correction
+  budget, approvals, rollback, audit). Runtime logic stays out of React components.
+- **Status discipline.** Slice 1 is `IMPLEMENTED` plus the specific `VERIFIED` claims
+  backed by artifacts in `evidence/`. Nothing here claims production readiness,
+  compliance, persistence, a real secret vault, or JARVIS connectivity.
