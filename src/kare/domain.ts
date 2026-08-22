@@ -226,6 +226,14 @@ export interface TaskRecord {
     status: "none" | "in-progress" | "completed";
   };
   verdict: "unknown" | "pass" | "fail";
+  /** Durable-write status. Never reported as persisted unless a write succeeded. */
+  persistence: {
+    status: "not-configured" | "persisted" | "failed";
+    store: string;
+    at: string | null;
+    detail: string | null;
+  };
+
   createdAt: string;
   updatedAt: string;
 }
