@@ -54,7 +54,9 @@ export interface ResolvedConfig {
   selectionPolicy(ref?: string): ExecutionPolicy;
   agentsForCapability(capability: string, ref?: string): string[];
   credentialPolicy(ref?: string): CredentialPolicy;
+  persistencePolicy(ref?: string): PersistencePolicy;
   correctionPolicy(ref?: string): CorrectionPolicy;
+
   simulationFor(agentId: string, ref?: string): { health: HealthState; script: SimulatedStep[] };
   consumptions(): ConfigConsumption[];
 }
