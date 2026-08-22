@@ -118,6 +118,14 @@ export const CredentialPolicySchema = z.object({
 });
 export type CredentialPolicy = z.infer<typeof CredentialPolicySchema>;
 
+/** How much history the console reads back from the persistence store. */
+export const PersistencePolicySchema = z.object({
+  taskHistoryLimit: z.number().int().min(1),
+  auditHistoryLimit: z.number().int().min(1),
+});
+export type PersistencePolicy = z.infer<typeof PersistencePolicySchema>;
+
+
 /** Identity/scopes the server API boundary acts with (configuration, not source). */
 export const ApiBoundarySchema = z.object({
   operatorActorId: z.string().min(1),
@@ -146,6 +154,8 @@ export const KareConfigSchema = z.object({
   provenance: ConfigProvenanceSchema,
   defaults: ConfigDefaultsSchema,
   credentials: CredentialPolicySchema,
+  persistence: PersistencePolicySchema,
+
   apiBoundary: ApiBoundarySchema,
   agents: z.array(AgentDescriptorSchema),
   policies: z.array(ExecutionPolicySchema).min(1),
@@ -216,6 +226,14 @@ export interface TaskRecord {
     status: "none" | "in-progress" | "completed";
   };
   verdict: "unknown" | "pass" | "fail";
+  /** Durable-write status. Never reported as persisted unless a write succeeded. */
+  persistence: {
+    status: "not-configured" | "persisted" | "failed";
+    store: string;
+    at: string | null;
+    detail: string | null;
+  };
+
   createdAt: string;
   updatedAt: string;
 }
