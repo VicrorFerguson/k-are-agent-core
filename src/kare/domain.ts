@@ -154,6 +154,8 @@ export const KareConfigSchema = z.object({
   provenance: ConfigProvenanceSchema,
   defaults: ConfigDefaultsSchema,
   credentials: CredentialPolicySchema,
+  persistence: PersistencePolicySchema,
+
   apiBoundary: ApiBoundarySchema,
   agents: z.array(AgentDescriptorSchema),
   policies: z.array(ExecutionPolicySchema).min(1),
