@@ -106,6 +106,12 @@ export class Orchestrator {
       },
       rollback: { available: false, status: "none" },
       verdict: "unknown",
+      persistence: {
+        status: "not-configured",
+        store: "none",
+        at: null,
+        detail: "No persistence backend configured",
+      },
       createdAt: nowIso(),
       updatedAt: nowIso(),
     };
