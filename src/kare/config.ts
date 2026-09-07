@@ -5,6 +5,7 @@ import {
   type CredentialPolicy,
   type ExecutionPolicy,
   type KareConfig,
+  type PersistencePolicy,
   type SimulatedStep,
   type HealthState,
 } from "./domain";
@@ -175,6 +176,10 @@ export function resolveConfig(provider: ConfigProvider): ResolvedConfig {
     credentialPolicy(ref) {
       record("credentials", null, ref);
       return config.credentials;
+    },
+    persistencePolicy(ref) {
+      record("persistence", null, ref);
+      return config.persistence;
     },
     correctionPolicy(ref) {
       record("correction", null, ref);

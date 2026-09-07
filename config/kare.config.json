@@ -18,6 +18,10 @@
       "kare-prod"
     ]
   },
+  "persistence": {
+    "taskHistoryLimit": 100,
+    "auditHistoryLimit": 200
+  },
   "agents": [
     {
       "agentId": "jarvis-external",
