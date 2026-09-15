@@ -1,5 +1,5 @@
-import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { WorkspaceExecutor } from './workspace-executor';
 import {
   ToolRequestPayload,
   ToolResultPayload,
@@ -7,56 +7,113 @@ import {
   TEST_002A_POLICY,
 } from './tool-gate-types';
 
+export interface AuthenticatedToolContext {
+  servicePrincipalId: string;
+  actorId: string;
+  actorRole: string;
+  authenticationSessionId?: string;
+}
+
 export class KAREToolGate {
   private policy: ToolGatePolicy;
-  private workspaceRoot: string;
+  private executor: WorkspaceExecutor;
 
   constructor(
     policy: ToolGatePolicy = TEST_002A_POLICY,
-    workspaceRoot: string = process.cwd()
+    executor?: WorkspaceExecutor
   ) {
     this.policy = policy;
-    this.workspaceRoot = path.resolve(workspaceRoot);
+    // Derive workspace root cleanly without hardcoding environment specifics
+    const rootDir = process.env.WORKSPACE_ROOT || process.cwd();
+    this.executor = executor || new WorkspaceExecutor({ workspaceRoot: rootDir });
   }
 
   /**
-   * Resolves targetPath against workspace root and verifies it doesn't escape.
+   * Resolves requested paths strictly inside workspace boundaries.
    */
-  private resolveWorkspacePath(targetPath: string): {
-    absolutePath: string;
-    relativePath: string;
-    isInside: boolean;
-  } {
-    const absolutePath = path.resolve(this.workspaceRoot, targetPath);
-    const relativePath = path.relative(this.workspaceRoot, absolutePath);
+  private resolveWorkspacePath(requestedPath: string): string {
+    const root = path.resolve(this.executor.workspaceRoot);
+    const candidate = path.resolve(root, requestedPath);
+    const relative = path.relative(root, candidate);
 
-    const isInside =
-      !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
-
-    return { absolutePath, relativePath, isInside };
+    if (
+      relative === '..' ||
+      relative.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(relative)
+    ) {
+      throw new Error('PATH_OUTSIDE_WORKSPACE');
+    }
+    return candidate;
   }
 
   /**
-   * Evaluates if a normalized relative path targets a protected resource.
+   * Segment-aware protected path check (prevents prefix-collision bugs).
    */
   private isProtectedPath(relativePath: string): boolean {
-    const normalizedTarget = path.normalize(relativePath).toLowerCase();
+    const normalizedTarget = relativePath
+      .split(path.sep)
+      .filter(Boolean)
+      .join('/')
+      .toLowerCase();
 
     return this.policy.protectedPaths.some((protectedPath) => {
-      const normalizedProtected = path.normalize(protectedPath).toLowerCase();
+      const normalizedProtected = protectedPath
+        .split('/')
+        .filter(Boolean)
+        .join('/')
+        .toLowerCase();
+
       return (
         normalizedTarget === normalizedProtected ||
-        normalizedTarget.startsWith(normalizedProtected + path.sep)
+        normalizedTarget.startsWith(`${normalizedProtected}/`)
       );
     });
   }
 
+  /**
+   * Anti-fabrication invariant helper: TOOL_COMPLETED can ONLY be returned
+   * when real executor output is supplied.
+   */
+  private completedResult(
+    requestId: string,
+    content: string,
+    affectedPath: string
+  ): ToolResultPayload {
+    if (content === undefined || content === null) {
+      throw new Error(
+        'INVARIANT_VIOLATION: TOOL_COMPLETED requires verified executor output.'
+      );
+    }
+    return {
+      requestId,
+      timestamp: Date.now(),
+      status: 'TOOL_COMPLETED',
+      exitCode: 0,
+      stdout: content,
+      stderr: '',
+      affectedPath,
+    };
+  }
+
   public async processRequest(
-    request: ToolRequestPayload
+    request: ToolRequestPayload,
+    context?: AuthenticatedToolContext
   ): Promise<ToolResultPayload> {
     const timestamp = Date.now();
 
-    // 1. Policy Check: Action Allowed
+    // 1. Capability Checks: Unimplemented or Unauthorized
+    if (request.action === 'FS_LIST' || request.action === 'SHELL_INSPECT') {
+      return {
+        requestId: request.requestId,
+        timestamp,
+        status: 'TOOL_UNAVAILABLE',
+        exitCode: 1,
+        stdout: '',
+        stderr: '',
+        errorMessage: `Capability '${request.action}' is declared but not implemented in this executor release.`,
+      };
+    }
+
     if (!this.policy.allowedActions.includes(request.action)) {
       return {
         requestId: request.requestId,
@@ -69,12 +126,12 @@ export class KAREToolGate {
       };
     }
 
-    // 2. Policy Check: Forbidden Command Tokens
-    if (request.command) {
-      const isForbidden = this.policy.forbiddenCommands.some((forbidden) =>
-        request.command?.includes(forbidden)
-      );
-      if (isForbidden) {
+    // 2. Path Authorization & Boundary Resolution
+    let absolutePath = '';
+    let relativePath = '';
+
+    if (request.targetPath !== undefined && request.targetPath !== null) {
+      if (request.targetPath === '') {
         return {
           requestId: request.requestId,
           timestamp,
@@ -82,20 +139,14 @@ export class KAREToolGate {
           exitCode: 1,
           stdout: '',
           stderr: '',
-          errorMessage: `K-ARE Policy Denial: Command '${request.command}' contains forbidden tokens.`,
+          errorMessage: 'K-ARE Security Denial: Empty target path supplied.',
         };
       }
-    }
 
-    // 3. Path Validation & Workspace Boundary Check
-    let targetPathInfo: ReturnType<typeof this.resolveWorkspacePath> | null =
-      null;
-
-    if (request.targetPath) {
-      targetPathInfo = this.resolveWorkspacePath(request.targetPath);
-
-      // Traversal Guard
-      if (!targetPathInfo.isInside) {
+      try {
+        absolutePath = this.resolveWorkspacePath(request.targetPath);
+        relativePath = path.relative(this.executor.workspaceRoot, absolutePath);
+      } catch (err) {
         return {
           requestId: request.requestId,
           timestamp,
@@ -107,8 +158,7 @@ export class KAREToolGate {
         };
       }
 
-      // Canonical Protected-Path Guard
-      if (this.isProtectedPath(targetPathInfo.relativePath)) {
+      if (this.isProtectedPath(relativePath)) {
         return {
           requestId: request.requestId,
           timestamp,
@@ -116,70 +166,40 @@ export class KAREToolGate {
           exitCode: 1,
           stdout: '',
           stderr: '',
-          errorMessage: `K-ARE Policy Denial: Access to protected path '${targetPathInfo.relativePath}' is denied.`,
+          errorMessage: `K-ARE Policy Denial: Access to protected path '${relativePath}' is denied.`,
         };
       }
     }
 
-    // 4. Execution with Timeout Guarantee
+    // 3. Execution Phase with Abort Signals
     const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      this.policy.maxExecutionTimeMs
-    );
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, this.policy.maxExecutionTimeMs);
 
     try {
       if (request.action === 'FS_READ') {
-        if (!targetPathInfo) {
-          throw new Error('targetPath is required for FS_READ.');
-        }
+        if (!absolutePath) throw new Error('targetPath is required.');
+        const content = await this.executor.readFile(absolutePath, controller.signal);
+        return this.completedResult(request.requestId, content, relativePath);
+      }
 
-        const fileContent = await fs.readFile(targetPathInfo.absolutePath, {
-          encoding: 'utf-8',
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
+      if (request.action === 'FS_EXISTS') {
+        if (!absolutePath) throw new Error('targetPath is required.');
+        const fileExists = await this.executor.exists(absolutePath, controller.signal);
+        const outputString = fileExists ? `EXISTS: ${relativePath}` : `NOT_FOUND: ${relativePath}`;
+        const exitCode = fileExists ? 0 : 1;
         return {
           requestId: request.requestId,
           timestamp: Date.now(),
           status: 'TOOL_COMPLETED',
-          exitCode: 0,
-          stdout: fileContent,
+          exitCode,
+          stdout: outputString,
           stderr: '',
-          affectedPath: targetPathInfo.relativePath,
+          affectedPath: relativePath,
         };
       }
 
-      if (request.action === 'FS_EXISTS') {
-        if (!targetPathInfo) throw new Error('targetPath is required.');
-        try {
-          await fs.access(targetPathInfo.absolutePath);
-          clearTimeout(timeoutId);
-          return {
-            requestId: request.requestId,
-            timestamp: Date.now(),
-            status: 'TOOL_COMPLETED',
-            exitCode: 0,
-            stdout: `EXISTS: ${targetPathInfo.relativePath}`,
-            stderr: '',
-            affectedPath: targetPathInfo.relativePath,
-          };
-        } catch {
-          clearTimeout(timeoutId);
-          return {
-            requestId: request.requestId,
-            timestamp: Date.now(),
-            status: 'TOOL_COMPLETED',
-            exitCode: 1,
-            stdout: `NOT_FOUND: ${targetPathInfo.relativePath}`,
-            stderr: '',
-            affectedPath: targetPathInfo.relativePath,
-          };
-        }
-      }
-
-      clearTimeout(timeoutId);
       return {
         requestId: request.requestId,
         timestamp: Date.now(),
@@ -187,20 +207,19 @@ export class KAREToolGate {
         exitCode: 1,
         stdout: '',
         stderr: '',
-        errorMessage: `Capability '${request.action}' is declared but not implemented in this executor release.`,
+        errorMessage: `Capability '${request.action}' is not executable.`,
       };
     } catch (error: any) {
-      clearTimeout(timeoutId);
-
-      if (error.name === 'AbortError') {
+      if (controller.signal.aborted) {
         return {
           requestId: request.requestId,
           timestamp: Date.now(),
           status: 'TOOL_FAILED',
           exitCode: 124,
           stdout: '',
-          stderr: 'Execution timed out',
-          errorMessage: `K-ARE Execution Error: Operation exceeded maximum execution time of ${this.policy.maxExecutionTimeMs}ms.`,
+          stderr: '',
+          affectedPath: relativePath,
+          errorMessage: 'TOOL_EXECUTION_TIMEOUT',
         };
       }
 
@@ -210,9 +229,12 @@ export class KAREToolGate {
         status: 'TOOL_FAILED',
         exitCode: 1,
         stdout: '',
-        stderr: error.message || String(error),
-        errorMessage: `Execution Error: ${error.message || String(error)}`,
+        stderr: '',
+        affectedPath: relativePath,
+        errorMessage: error.code === 'ENOENT' ? 'FILE_NOT_FOUND' : 'EXECUTION_ERROR',
       };
+    } finally {
+      clearTimeout(timeout);
     }
   }
 }
