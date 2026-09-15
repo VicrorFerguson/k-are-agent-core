@@ -4,27 +4,35 @@ import { promisify } from 'node:util';
 const execAsync = promisify(exec);
 
 export interface GitSyncOptions {
-  workspaceRoot: string;
+  workspaceRoot?: string;
   remoteUrl?: string;
   defaultBranch?: string;
+  oauthToken?: string;
 }
 
 export class GitSyncService {
   private workspaceRoot: string;
   private defaultBranch: string;
+  private oauthToken?: string;
 
-  constructor(options: GitSyncOptions) {
+  constructor(options: GitSyncOptions = {}) {
     this.workspaceRoot = options.workspaceRoot || process.cwd();
     this.defaultBranch = options.defaultBranch || 'main';
+    this.oauthToken = options.oauthToken || process.env.GITHUB_OAUTH_TOKEN;
+  }
+
+  public setOAuthToken(token: string): void {
+    this.oauthToken = token;
   }
 
   private async runGit(command: string): Promise<{ stdout: string; stderr: string }> {
-    return execAsync(`git ${command}`, { cwd: this.workspaceRoot });
+    const env = { ...process.env };
+    if (this.oauthToken) {
+      env.GITHUB_TOKEN = this.oauthToken;
+    }
+    return execAsync(`git ${command}`, { cwd: this.workspaceRoot, env });
   }
 
-  /**
-   * INBOUND SYNC: Pull latest changes from remote before JARVIS starts work.
-   */
   public async pullLatest(): Promise<{ success: boolean; output: string }> {
     try {
       const { stdout } = await this.runGit(`pull origin ${this.defaultBranch} --rebase`);
@@ -34,33 +42,24 @@ export class GitSyncService {
     }
   }
 
-  /**
-   * OUTBOUND SYNC: Stage files, commit with JARVIS metadata, and push.
-   */
   public async commitAndPush(
     commitMessage: string,
     files: string[] = ['.']
   ): Promise<{ success: boolean; hash?: string; output: string }> {
     try {
-      // 1. Stage specific files or entire workspace
       const fileList = files.join(' ');
       await this.runGit(`add ${fileList}`);
 
-      // 2. Check if there are staging changes to commit
       const { stdout: status } = await this.runGit('status --porcelain');
       if (!status.trim()) {
         return { success: true, output: 'No changes detected to commit.' };
       }
 
-      // 3. Commit with structured author identity
       const sanitizedMsg = commitMessage.replace(/"/g, '\\"');
       const authorFlag = '--author="JARVIS Agent <jarvis@kare.internal>"';
       await this.runGit(`commit ${authorFlag} -m "${sanitizedMsg}"`);
 
-      // 4. Retrieve commit hash
       const { stdout: hash } = await this.runGit('rev-parse --short HEAD');
-
-      // 5. Push to remote repository
       const { stdout: pushOutput } = await this.runGit(`push origin ${this.defaultBranch}`);
 
       return {
@@ -73,11 +72,12 @@ export class GitSyncService {
     }
   }
 
-  /**
-   * STATUS CHECK: Inspect local uncommitted modifications.
-   */
   public async getStatus(): Promise<string> {
-    const { stdout } = await this.runGit('status --short');
-    return stdout.trim() || 'Workspace clean.';
+    try {
+      const { stdout } = await this.runGit('status --short');
+      return stdout.trim() || 'Workspace clean.';
+    } catch (error: any) {
+      return `Git Status Error: ${error.message}`;
+    }
   }
 }
