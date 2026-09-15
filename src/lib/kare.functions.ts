@@ -55,8 +55,13 @@ async function boundary() {
 export const executeJarvisToolRequest = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ToolRequestSchema.parse(input))
   .handler(async ({ data }) => {
+    // Bound to K-ARE operator boundary context
+    const { actor } = await boundary();
     const result = await toolGate.processRequest(data);
-    return result;
+    return {
+      ...result,
+      operatorActorId: actor.operatorActorId,
+    };
   });
 
 export const getKareStatus = createServerFn({ method: "GET" }).handler(async () => {
