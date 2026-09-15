@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { KAREToolGate } from "@/kare/tool-gate";
 
 /**
  * Minimum K-ARE server/API boundary for Slice 1.
@@ -18,12 +19,45 @@ const SubmitSchema = z.object({
 
 const DecisionSchema = z.object({ taskId: z.string().min(4), approve: z.boolean() });
 
+/**
+ * Zod validation schema for JARVIS [TOOL_REQUEST] payloads.
+ */
+const ToolRequestSchema = z.object({
+  requestId: z.string().min(4),
+  timestamp: z.number(),
+  action: z.enum([
+    "FS_READ",
+    "FS_EXISTS",
+    "FS_LIST",
+    "SHELL_INSPECT",
+    "SANDBOX_EDIT",
+  ]),
+  targetPath: z.string().optional(),
+  command: z.string().optional(),
+  args: z.array(z.string()).optional(),
+  content: z.string().optional(),
+  reasoning: z.string().min(1),
+});
+
+const toolGate = new KAREToolGate();
+
 async function boundary() {
   const { getRuntime } = await import("@/kare/runtime");
   const runtime = getRuntime();
   const actor = runtime.resolved.config.apiBoundary;
   return { runtime, actor };
 }
+
+/**
+ * Server function to authorize and process JARVIS [TOOL_REQUEST] payloads
+ * through the K-ARE Tool Gate.
+ */
+export const executeJarvisToolRequest = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => ToolRequestSchema.parse(input))
+  .handler(async ({ data }) => {
+    const result = await toolGate.processRequest(data);
+    return result;
+  });
 
 export const getKareStatus = createServerFn({ method: "GET" }).handler(async () => {
   const { runtime } = await boundary();
