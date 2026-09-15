@@ -9,9 +9,46 @@ import {
 
 export class KAREToolGate {
   private policy: ToolGatePolicy;
+  private workspaceRoot: string;
 
-  constructor(policy: ToolGatePolicy = TEST_002A_POLICY) {
+  constructor(
+    policy: ToolGatePolicy = TEST_002A_POLICY,
+    workspaceRoot: string = process.cwd()
+  ) {
     this.policy = policy;
+    this.workspaceRoot = path.resolve(workspaceRoot);
+  }
+
+  /**
+   * Resolves targetPath against workspace root and verifies it doesn't escape.
+   */
+  private resolveWorkspacePath(targetPath: string): {
+    absolutePath: string;
+    relativePath: string;
+    isInside: boolean;
+  } {
+    const absolutePath = path.resolve(this.workspaceRoot, targetPath);
+    const relativePath = path.relative(this.workspaceRoot, absolutePath);
+
+    const isInside =
+      !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
+
+    return { absolutePath, relativePath, isInside };
+  }
+
+  /**
+   * Evaluates if a normalized relative path targets a protected resource.
+   */
+  private isProtectedPath(relativePath: string): boolean {
+    const normalizedTarget = path.normalize(relativePath).toLowerCase();
+
+    return this.policy.protectedPaths.some((protectedPath) => {
+      const normalizedProtected = path.normalize(protectedPath).toLowerCase();
+      return (
+        normalizedTarget === normalizedProtected ||
+        normalizedTarget.startsWith(normalizedProtected + path.sep)
+      );
+    });
   }
 
   public async processRequest(
@@ -19,7 +56,7 @@ export class KAREToolGate {
   ): Promise<ToolResultPayload> {
     const timestamp = Date.now();
 
-    // 1. Policy check: Is action allowed?
+    // 1. Policy Check: Action Allowed
     if (!this.policy.allowedActions.includes(request.action)) {
       return {
         requestId: request.requestId,
@@ -32,7 +69,7 @@ export class KAREToolGate {
       };
     }
 
-    // 2. Policy check: Evaluate forbidden commands if command is supplied
+    // 2. Policy Check: Forbidden Command Tokens
     if (request.command) {
       const isForbidden = this.policy.forbiddenCommands.some((forbidden) =>
         request.command?.includes(forbidden)
@@ -50,32 +87,59 @@ export class KAREToolGate {
       }
     }
 
-    // 3. Policy check: Is path protected?
-    if (
-      request.targetPath &&
-      this.policy.protectedPaths.some((p) => request.targetPath?.includes(p))
-    ) {
-      return {
-        requestId: request.requestId,
-        timestamp,
-        status: 'TOOL_DENIED',
-        exitCode: 1,
-        stdout: '',
-        stderr: '',
-        errorMessage: `K-ARE Policy Denial: Access to '${request.targetPath}' is protected.`,
-      };
+    // 3. Path Validation & Workspace Boundary Check
+    let targetPathInfo: ReturnType<typeof this.resolveWorkspacePath> | null =
+      null;
+
+    if (request.targetPath) {
+      targetPathInfo = this.resolveWorkspacePath(request.targetPath);
+
+      // Traversal Guard
+      if (!targetPathInfo.isInside) {
+        return {
+          requestId: request.requestId,
+          timestamp,
+          status: 'TOOL_DENIED',
+          exitCode: 1,
+          stdout: '',
+          stderr: '',
+          errorMessage: `K-ARE Security Denial: Path traversal outside workspace boundary detected ('${request.targetPath}').`,
+        };
+      }
+
+      // Canonical Protected-Path Guard
+      if (this.isProtectedPath(targetPathInfo.relativePath)) {
+        return {
+          requestId: request.requestId,
+          timestamp,
+          status: 'TOOL_DENIED',
+          exitCode: 1,
+          stdout: '',
+          stderr: '',
+          errorMessage: `K-ARE Policy Denial: Access to protected path '${targetPathInfo.relativePath}' is denied.`,
+        };
+      }
     }
 
-    // 4. REAL EXECUTOR: Physical Filesystem Execution via Node.js `fs`
+    // 4. Execution with Timeout Guarantee
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      this.policy.maxExecutionTimeMs
+    );
+
     try {
       if (request.action === 'FS_READ') {
-        if (!request.targetPath) {
+        if (!targetPathInfo) {
           throw new Error('targetPath is required for FS_READ.');
         }
 
-        const absolutePath = path.resolve(process.cwd(), request.targetPath);
-        const fileContent = await fs.readFile(absolutePath, 'utf-8');
+        const fileContent = await fs.readFile(targetPathInfo.absolutePath, {
+          encoding: 'utf-8',
+          signal: controller.signal,
+        });
 
+        clearTimeout(timeoutId);
         return {
           requestId: request.requestId,
           timestamp: Date.now(),
@@ -83,37 +147,39 @@ export class KAREToolGate {
           exitCode: 0,
           stdout: fileContent,
           stderr: '',
-          affectedPath: request.targetPath,
+          affectedPath: targetPathInfo.relativePath,
         };
       }
 
       if (request.action === 'FS_EXISTS') {
-        if (!request.targetPath) throw new Error('targetPath required.');
-        const absolutePath = path.resolve(process.cwd(), request.targetPath);
+        if (!targetPathInfo) throw new Error('targetPath is required.');
         try {
-          await fs.access(absolutePath);
+          await fs.access(targetPathInfo.absolutePath);
+          clearTimeout(timeoutId);
           return {
             requestId: request.requestId,
             timestamp: Date.now(),
             status: 'TOOL_COMPLETED',
             exitCode: 0,
-            stdout: `EXISTS: ${request.targetPath}`,
+            stdout: `EXISTS: ${targetPathInfo.relativePath}`,
             stderr: '',
-            affectedPath: request.targetPath,
+            affectedPath: targetPathInfo.relativePath,
           };
         } catch {
+          clearTimeout(timeoutId);
           return {
             requestId: request.requestId,
             timestamp: Date.now(),
             status: 'TOOL_COMPLETED',
             exitCode: 1,
-            stdout: `NOT_FOUND: ${request.targetPath}`,
+            stdout: `NOT_FOUND: ${targetPathInfo.relativePath}`,
             stderr: '',
-            affectedPath: request.targetPath,
+            affectedPath: targetPathInfo.relativePath,
           };
         }
       }
 
+      clearTimeout(timeoutId);
       return {
         requestId: request.requestId,
         timestamp: Date.now(),
@@ -121,9 +187,23 @@ export class KAREToolGate {
         exitCode: 1,
         stdout: '',
         stderr: '',
-        errorMessage: `Action '${request.action}' is not supported by this executor release.`,
+        errorMessage: `Capability '${request.action}' is declared but not implemented in this executor release.`,
       };
     } catch (error: any) {
+      clearTimeout(timeoutId);
+
+      if (error.name === 'AbortError') {
+        return {
+          requestId: request.requestId,
+          timestamp: Date.now(),
+          status: 'TOOL_FAILED',
+          exitCode: 124,
+          stdout: '',
+          stderr: 'Execution timed out',
+          errorMessage: `K-ARE Execution Error: Operation exceeded maximum execution time of ${this.policy.maxExecutionTimeMs}ms.`,
+        };
+      }
+
       return {
         requestId: request.requestId,
         timestamp: Date.now(),
