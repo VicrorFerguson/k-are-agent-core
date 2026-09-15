@@ -3,7 +3,10 @@ export type ToolAction =
   | 'FS_EXISTS'
   | 'FS_LIST'
   | 'SHELL_INSPECT'
-  | 'SANDBOX_EDIT';
+  | 'SANDBOX_EDIT'
+  | 'GIT_PULL'
+  | 'GIT_PUSH'
+  | 'GIT_STATUS';
 
 export type ToolExecutionStatus =
   | 'TOOL_REQUESTED'
@@ -22,6 +25,8 @@ export interface ToolRequestPayload {
   command?: string;
   args?: string[];
   content?: string;
+  commitMessage?: string;
+  targetFiles?: string[];
   reasoning: string;
 }
 
@@ -45,12 +50,20 @@ export interface ToolGatePolicy {
 }
 
 export const TEST_002A_POLICY: ToolGatePolicy = {
-  allowedActions: ['FS_READ', 'FS_EXISTS', 'FS_LIST', 'SHELL_INSPECT'],
+  allowedActions: [
+    'FS_READ',
+    'FS_EXISTS',
+    'FS_LIST',
+    'SHELL_INSPECT',
+    'GIT_PULL',
+    'GIT_PUSH',
+    'GIT_STATUS',
+  ],
   protectedPaths: [
     '.env',
     'supabase/config.toml',
     'src/kare/gateway.ts',
   ],
-  forbiddenCommands: ['rm', 'mv', 'chmod', 'git push', 'npm publish'],
-  maxExecutionTimeMs: 5000,
+  forbiddenCommands: ['rm', 'mv', 'chmod', 'npm publish'],
+  maxExecutionTimeMs: 15000,
 };
