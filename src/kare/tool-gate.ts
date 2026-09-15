@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import { WorkspaceExecutor } from './workspace-executor';
+import { GitSyncService } from './git-sync-service';
 import {
   ToolRequestPayload,
   ToolResultPayload,
@@ -17,15 +18,17 @@ export interface AuthenticatedToolContext {
 export class KAREToolGate {
   private policy: ToolGatePolicy;
   private executor: WorkspaceExecutor;
+  private gitSync: GitSyncService;
 
   constructor(
     policy: ToolGatePolicy = TEST_002A_POLICY,
-    executor?: WorkspaceExecutor
+    executor?: WorkspaceExecutor,
+    gitSync?: GitSyncService
   ) {
     this.policy = policy;
-    // Derive workspace root cleanly without hardcoding environment specifics
     const rootDir = process.env.WORKSPACE_ROOT || process.cwd();
     this.executor = executor || new WorkspaceExecutor({ workspaceRoot: rootDir });
+    this.gitSync = gitSync || new GitSyncService({ workspaceRoot: rootDir });
   }
 
   /**
@@ -77,7 +80,7 @@ export class KAREToolGate {
   private completedResult(
     requestId: string,
     content: string,
-    affectedPath: string
+    affectedPath?: string
   ): ToolResultPayload {
     if (content === undefined || content === null) {
       throw new Error(
@@ -198,6 +201,37 @@ export class KAREToolGate {
           stderr: '',
           affectedPath: relativePath,
         };
+      }
+
+      if (request.action === 'GIT_PULL') {
+        const pullResult = await this.gitSync.pullLatest();
+        return {
+          requestId: request.requestId,
+          timestamp: Date.now(),
+          status: pullResult.success ? 'TOOL_COMPLETED' : 'TOOL_FAILED',
+          exitCode: pullResult.success ? 0 : 1,
+          stdout: pullResult.output,
+          stderr: pullResult.success ? '' : pullResult.output,
+        };
+      }
+
+      if (request.action === 'GIT_PUSH') {
+        const message = request.commitMessage || 'feat(jarvis): automated workspace commit';
+        const targetFiles = request.targetFiles || ['.'];
+        const pushResult = await this.gitSync.commitAndPush(message, targetFiles);
+        return {
+          requestId: request.requestId,
+          timestamp: Date.now(),
+          status: pushResult.success ? 'TOOL_COMPLETED' : 'TOOL_FAILED',
+          exitCode: pushResult.success ? 0 : 1,
+          stdout: pushResult.output,
+          stderr: pushResult.success ? '' : pushResult.output,
+        };
+      }
+
+      if (request.action === 'GIT_STATUS') {
+        const statusOutput = await this.gitSync.getStatus();
+        return this.completedResult(request.requestId, statusOutput);
       }
 
       return {
