@@ -13,6 +13,7 @@ export interface AuthenticatedToolContext {
   actorId: string;
   actorRole: string;
   authenticationSessionId?: string;
+  oauthToken?: string;
 }
 
 export class KAREToolGate {
@@ -31,9 +32,6 @@ export class KAREToolGate {
     this.gitSync = gitSync || new GitSyncService({ workspaceRoot: rootDir });
   }
 
-  /**
-   * Resolves requested paths strictly inside workspace boundaries.
-   */
   private resolveWorkspacePath(requestedPath: string): string {
     const root = path.resolve(this.executor.workspaceRoot);
     const candidate = path.resolve(root, requestedPath);
@@ -49,9 +47,6 @@ export class KAREToolGate {
     return candidate;
   }
 
-  /**
-   * Segment-aware protected path check (prevents prefix-collision bugs).
-   */
   private isProtectedPath(relativePath: string): boolean {
     const normalizedTarget = relativePath
       .split(path.sep)
@@ -73,10 +68,6 @@ export class KAREToolGate {
     });
   }
 
-  /**
-   * Anti-fabrication invariant helper: TOOL_COMPLETED can ONLY be returned
-   * when real executor output is supplied.
-   */
   private completedResult(
     requestId: string,
     content: string,
@@ -104,7 +95,10 @@ export class KAREToolGate {
   ): Promise<ToolResultPayload> {
     const timestamp = Date.now();
 
-    // 1. Capability Checks: Unimplemented or Unauthorized
+    if (context?.oauthToken) {
+      this.gitSync.setOAuthToken(context.oauthToken);
+    }
+
     if (request.action === 'FS_LIST' || request.action === 'SHELL_INSPECT') {
       return {
         requestId: request.requestId,
@@ -129,7 +123,6 @@ export class KAREToolGate {
       };
     }
 
-    // 2. Path Authorization & Boundary Resolution
     let absolutePath = '';
     let relativePath = '';
 
@@ -174,7 +167,6 @@ export class KAREToolGate {
       }
     }
 
-    // 3. Execution Phase with Abort Signals
     const controller = new AbortController();
     const timeout = setTimeout(() => {
       controller.abort();
