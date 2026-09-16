@@ -1,15 +1,13 @@
-import { NextResponse } from 'next/server';
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
 
   if (!code) {
-    return NextResponse.json({ error: 'Missing authorization code' }, { status: 400 });
+    return Response.json({ error: 'Missing authorization code' }, { status: 400 });
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  const clientId = process.env['GITHUB_CLIENT_ID'];
+  const clientSecret = process.env['GITHUB_CLIENT_SECRET'];
 
   try {
     // 1. Exchange code for GitHub Access Token
@@ -59,10 +57,10 @@ export async function GET(request: Request) {
       </html>
     `;
 
-    return new NextResponse(htmlResponse, {
+    return new Response(htmlResponse, {
       headers: { 'Content-Type': 'text/html' },
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return Response.json({ error: err instanceof Error ? err.message : 'GitHub authentication failed' }, { status: 500 });
   }
 }

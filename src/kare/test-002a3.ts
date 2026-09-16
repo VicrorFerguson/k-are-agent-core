@@ -34,9 +34,9 @@ async function runTestSuite() {
       requestId: `req_${Math.random().toString(36).substring(7)}`,
       timestamp: Date.now(),
       action: tc.req.action as any,
-      targetPath: tc.req.targetPath,
-      command: tc.req.command,
       reasoning: 'Test execution for 002A.3 compliance.',
+      ...(tc.req.targetPath === undefined ? {} : { targetPath: tc.req.targetPath }),
+      ...(tc.req.command === undefined ? {} : { command: tc.req.command }),
     };
 
     const res = await gate.processRequest(payload, context);

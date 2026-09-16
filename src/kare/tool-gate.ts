@@ -27,7 +27,7 @@ export class KAREToolGate {
     gitSync?: GitSyncService
   ) {
     this.policy = policy;
-    const rootDir = process.env.WORKSPACE_ROOT || process.cwd();
+    const rootDir = process.env['WORKSPACE_ROOT'] || process.cwd();
     this.executor = executor || new WorkspaceExecutor({ workspaceRoot: rootDir });
     this.gitSync = gitSync || new GitSyncService({ workspaceRoot: rootDir });
   }
@@ -78,15 +78,16 @@ export class KAREToolGate {
         'INVARIANT_VIOLATION: TOOL_COMPLETED requires verified executor output.'
       );
     }
-    return {
+    const result: ToolResultPayload = {
       requestId,
       timestamp: Date.now(),
       status: 'TOOL_COMPLETED',
       exitCode: 0,
       stdout: content,
       stderr: '',
-      affectedPath,
     };
+    if (affectedPath !== undefined) result.affectedPath = affectedPath;
+    return result;
   }
 
   public async processRequest(

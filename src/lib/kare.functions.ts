@@ -57,7 +57,17 @@ export const executeJarvisToolRequest = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     // Bound to K-ARE operator boundary context
     const { actor } = await boundary();
-    const result = await toolGate.processRequest(data);
+    const toolRequest = {
+      requestId: data.requestId,
+      timestamp: data.timestamp,
+      action: data.action,
+      reasoning: data.reasoning,
+      ...(data.targetPath === undefined ? {} : { targetPath: data.targetPath }),
+      ...(data.command === undefined ? {} : { command: data.command }),
+      ...(data.args === undefined ? {} : { args: data.args }),
+      ...(data.content === undefined ? {} : { content: data.content }),
+    };
+    const result = await toolGate.processRequest(toolRequest);
     return {
       ...result,
       operatorActorId: actor.operatorActorId,
