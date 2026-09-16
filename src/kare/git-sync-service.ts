@@ -13,12 +13,12 @@ export interface GitSyncOptions {
 export class GitSyncService {
   private workspaceRoot: string;
   private defaultBranch: string;
-  private oauthToken?: string;
+  private oauthToken: string | undefined;
 
   constructor(options: GitSyncOptions = {}) {
     this.workspaceRoot = options.workspaceRoot || process.cwd();
     this.defaultBranch = options.defaultBranch || 'main';
-    this.oauthToken = options.oauthToken || process.env.GITHUB_OAUTH_TOKEN;
+    this.oauthToken = options.oauthToken || process.env['GITHUB_OAUTH_TOKEN'];
   }
 
   public setOAuthToken(token: string): void {
@@ -28,7 +28,7 @@ export class GitSyncService {
   private async runGit(command: string): Promise<{ stdout: string; stderr: string }> {
     const env = { ...process.env };
     if (this.oauthToken) {
-      env.GITHUB_TOKEN = this.oauthToken;
+      env['GITHUB_TOKEN'] = this.oauthToken;
     }
     return execAsync(`git ${command}`, { cwd: this.workspaceRoot, env });
   }
