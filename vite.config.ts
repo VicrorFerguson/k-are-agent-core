@@ -1,8 +1,3 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig({
-  test: {
-    environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
-  },
-});
+export default defineConfig();
