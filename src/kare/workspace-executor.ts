@@ -1,4 +1,4 @@
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile } from "node:fs/promises";
 
 export interface WorkspaceExecutorOptions {
   workspaceRoot: string;
@@ -16,12 +16,12 @@ export class WorkspaceExecutor {
   }
 
   public async readFile(filePath: string, signal?: AbortSignal): Promise<string> {
-    return readFile(filePath, { encoding: 'utf8', signal });
+    return readFile(filePath, { encoding: "utf8", signal });
   }
 
   public async exists(filePath: string, signal?: AbortSignal): Promise<boolean> {
     if (signal?.aborted) {
-      throw new DOMException('The operation was aborted.', 'AbortError');
+      throw new DOMException("The operation was aborted.", "AbortError");
     }
 
     try {
@@ -29,11 +29,11 @@ export class WorkspaceExecutor {
       return true;
     } catch (error) {
       if (signal?.aborted) {
-        throw new DOMException('The operation was aborted.', 'AbortError');
+        throw new DOMException("The operation was aborted.", "AbortError");
       }
 
-      const code = error instanceof Error && 'code' in error ? error.code : undefined;
-      if (code === 'ENOENT' || code === 'ENOTDIR') {
+      const code = error instanceof Error && "code" in error ? error.code : undefined;
+      if (code === "ENOENT" || code === "ENOTDIR") {
         return false;
       }
       throw error;

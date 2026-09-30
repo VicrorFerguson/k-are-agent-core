@@ -25,13 +25,7 @@ const DecisionSchema = z.object({ taskId: z.string().min(4), approve: z.boolean(
 const ToolRequestSchema = z.object({
   requestId: z.string().min(4),
   timestamp: z.number(),
-  action: z.enum([
-    "FS_READ",
-    "FS_EXISTS",
-    "FS_LIST",
-    "SHELL_INSPECT",
-    "SANDBOX_EDIT",
-  ]),
+  action: z.enum(["FS_READ", "FS_EXISTS", "FS_LIST", "SHELL_INSPECT", "SANDBOX_EDIT"]),
   targetPath: z.string().optional(),
   command: z.string().optional(),
   args: z.array(z.string()).optional(),

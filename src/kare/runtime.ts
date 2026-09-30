@@ -2,11 +2,7 @@ import configDocument from "../../config/kare.config.json" with { type: "json" }
 import { InMemoryAuditSink } from "./audit";
 import { MockExternalAgentAdapter, SimulatedTransport } from "./adapters/jarvis-mock";
 import { StaticConfigProvider, resolveConfig, type ConfigProvider } from "./config";
-import {
-  CredentialGateway,
-  EphemeralSecretManager,
-  type CredentialValidator,
-} from "./credentials";
+import { CredentialGateway, EphemeralSecretManager, type CredentialValidator } from "./credentials";
 import { KareError } from "./errors";
 import { AgentGateway } from "./gateway";
 import { Orchestrator } from "./orchestrator";

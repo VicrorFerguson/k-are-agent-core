@@ -43,7 +43,9 @@ function Tag({ children, tone = "muted" }: { children: React.ReactNode; tone?: s
     warn: "bg-destructive/10 text-destructive",
   };
   return (
-    <span className={`rounded px-1.5 py-0.5 font-mono text-[11px] ${tones[tone] ?? tones["muted"]}`}>
+    <span
+      className={`rounded px-1.5 py-0.5 font-mono text-[11px] ${tones[tone] ?? tones["muted"]}`}
+    >
       {children}
     </span>
   );
@@ -266,7 +268,9 @@ function Console() {
                 <ul className="space-y-1 text-[11px]">
                   {active.evidence.map((e) => (
                     <li key={e.evidenceId} className="flex gap-2">
-                      <Tag tone={e.outcome === "pass" ? "ok" : e.outcome === "fail" ? "warn" : "muted"}>
+                      <Tag
+                        tone={e.outcome === "pass" ? "ok" : e.outcome === "fail" ? "warn" : "muted"}
+                      >
                         {e.outcome}
                       </Tag>
                       <span className="font-mono">{e.kind}</span>

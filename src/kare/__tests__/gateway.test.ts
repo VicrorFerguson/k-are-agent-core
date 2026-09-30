@@ -55,7 +55,11 @@ describe("agent gateway", () => {
 
   it("routes an authorized task and records provenance", async () => {
     const { gateway } = harness();
-    const result = await gateway.execute({ task: task("ok"), scopes: ["kare:execute"], actorId: "t" });
+    const result = await gateway.execute({
+      task: task("ok"),
+      scopes: ["kare:execute"],
+      actorId: "t",
+    });
     expect(result.ok).toBe(true);
     expect(result.provenance.agentId).toBe("kare-analyzer");
     expect(result.provenance.isMock).toBe(true);
@@ -78,7 +82,10 @@ describe("agent gateway", () => {
   });
 
   it("skips unavailable agents and fails closed when none remain", async () => {
-    const { gateway } = harness(doc(), { "kare-analyzer": "unavailable", "jarvis-external": "unavailable" });
+    const { gateway } = harness(doc(), {
+      "kare-analyzer": "unavailable",
+      "jarvis-external": "unavailable",
+    });
     await expect(
       gateway.execute({ task: task("down"), scopes: ["kare:execute"], actorId: "t" }),
     ).rejects.toThrowError(/No healthy agent/);
@@ -86,7 +93,11 @@ describe("agent gateway", () => {
 
   it("falls over to the next configured agent when the preferred one is unavailable", async () => {
     const { gateway } = harness(doc(), { "kare-analyzer": "unavailable" });
-    const r = await gateway.execute({ task: task("failover"), scopes: ["kare:execute"], actorId: "t" });
+    const r = await gateway.execute({
+      task: task("failover"),
+      scopes: ["kare:execute"],
+      actorId: "t",
+    });
     expect(r.provenance.agentId).toBe("jarvis-external");
   });
 
@@ -96,23 +107,39 @@ describe("agent gateway", () => {
       { ok: true, outcome: "success", summary: "second try" },
     ]);
     const { gateway } = harness(d);
-    const r = await gateway.execute({ task: task("retry"), scopes: ["kare:execute"], actorId: "t" });
+    const r = await gateway.execute({
+      task: task("retry"),
+      scopes: ["kare:execute"],
+      actorId: "t",
+    });
     expect(r.ok).toBe(true);
     expect(r.provenance.attempt).toBe(2);
   });
 
   it("stops at configured retry exhaustion", async () => {
-    const d = withScript("kare-analyzer", [{ ok: false, outcome: "transient", summary: "always flaky" }]);
+    const d = withScript("kare-analyzer", [
+      { ok: false, outcome: "transient", summary: "always flaky" },
+    ]);
     const { gateway, resolved } = harness(d);
-    const r = await gateway.execute({ task: task("exhaust"), scopes: ["kare:execute"], actorId: "t" });
+    const r = await gateway.execute({
+      task: task("exhaust"),
+      scopes: ["kare:execute"],
+      actorId: "t",
+    });
     expect(r.ok).toBe(false);
     expect(r.provenance.attempt).toBe(resolved.policyFor("policy.internal.fast").retry.maxAttempts);
   });
 
   it("does not retry non-retryable outcomes (timeout on the internal policy)", async () => {
-    const d = withScript("kare-analyzer", [{ ok: false, outcome: "timeout", summary: "timed out" }]);
+    const d = withScript("kare-analyzer", [
+      { ok: false, outcome: "timeout", summary: "timed out" },
+    ]);
     const { gateway } = harness(d);
-    const r = await gateway.execute({ task: task("timeout"), scopes: ["kare:execute"], actorId: "t" });
+    const r = await gateway.execute({
+      task: task("timeout"),
+      scopes: ["kare:execute"],
+      actorId: "t",
+    });
     expect(r.outcome).toBe("timeout");
     expect(r.provenance.attempt).toBe(1);
   });
@@ -130,7 +157,11 @@ describe("agent gateway", () => {
         return { garbage: true } as any;
       },
     });
-    const r = await gateway.execute({ task: task("malformed"), scopes: ["kare:execute"], actorId: "t" });
+    const r = await gateway.execute({
+      task: task("malformed"),
+      scopes: ["kare:execute"],
+      actorId: "t",
+    });
     expect(r.ok).toBeFalsy();
   });
 

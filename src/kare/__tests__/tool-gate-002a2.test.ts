@@ -75,10 +75,7 @@ describe("K-ARE TEST 002A.2 — tool gate boundary (automated)", () => {
   });
 
   it("8. denies an unauthorized action (SANDBOX_EDIT)", async () => {
-    const res = await gate.processRequest(
-      req("SANDBOX_EDIT", "src/kare/config.ts"),
-      testContext(),
-    );
+    const res = await gate.processRequest(req("SANDBOX_EDIT", "src/kare/config.ts"), testContext());
     expect(res.status).toBe("TOOL_DENIED");
     expect(res.errorMessage).toMatch(/not authorized/i);
   });
@@ -90,10 +87,7 @@ describe("K-ARE TEST 002A.2 — tool gate boundary (automated)", () => {
   });
 
   it("10. reports an unimplemented action as TOOL_UNAVAILABLE (SHELL_INSPECT)", async () => {
-    const res = await gate.processRequest(
-      req("SHELL_INSPECT", undefined, "ls -la"),
-      testContext(),
-    );
+    const res = await gate.processRequest(req("SHELL_INSPECT", undefined, "ls -la"), testContext());
     expect(res.status).toBe("TOOL_UNAVAILABLE");
     expect(res.errorMessage).toMatch(/not implemented/i);
   });

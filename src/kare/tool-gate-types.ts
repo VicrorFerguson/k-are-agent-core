@@ -1,18 +1,13 @@
-export type ToolAction =
-  | 'FS_READ'
-  | 'FS_EXISTS'
-  | 'FS_LIST'
-  | 'SHELL_INSPECT'
-  | 'SANDBOX_EDIT';
+export type ToolAction = "FS_READ" | "FS_EXISTS" | "FS_LIST" | "SHELL_INSPECT" | "SANDBOX_EDIT";
 
 export type ToolExecutionStatus =
-  | 'TOOL_REQUESTED'
-  | 'TOOL_AUTHORIZED'
-  | 'TOOL_EXECUTING'
-  | 'TOOL_COMPLETED'
-  | 'TOOL_FAILED'
-  | 'TOOL_DENIED'
-  | 'TOOL_UNAVAILABLE';
+  | "TOOL_REQUESTED"
+  | "TOOL_AUTHORIZED"
+  | "TOOL_EXECUTING"
+  | "TOOL_COMPLETED"
+  | "TOOL_FAILED"
+  | "TOOL_DENIED"
+  | "TOOL_UNAVAILABLE";
 
 export interface ToolRequestPayload {
   requestId: string;
@@ -47,17 +42,8 @@ export interface ToolGatePolicy {
 }
 
 export const TEST_002A_POLICY: ToolGatePolicy = {
-  allowedActions: [
-    'FS_READ',
-    'FS_EXISTS',
-    'FS_LIST',
-    'SHELL_INSPECT',
-  ],
-  protectedPaths: [
-    '.env',
-    'supabase/config.toml',
-    'src/kare/gateway.ts',
-  ],
-  forbiddenCommands: ['rm', 'mv', 'chmod', 'npm publish'],
+  allowedActions: ["FS_READ", "FS_EXISTS", "FS_LIST", "SHELL_INSPECT"],
+  protectedPaths: [".env", "supabase/config.toml", "src/kare/gateway.ts"],
+  forbiddenCommands: ["rm", "mv", "chmod", "npm publish"],
   maxExecutionTimeMs: 15000,
 };
