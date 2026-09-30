@@ -60,7 +60,7 @@ export async function GET(request: Request) {
     return new Response(htmlResponse, {
       headers: { "Content-Type": "text/html" },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return Response.json(
       { error: err instanceof Error ? err.message : "GitHub authentication failed" },
       { status: 500 },
