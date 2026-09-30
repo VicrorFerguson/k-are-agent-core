@@ -1,6 +1,5 @@
 import * as path from 'node:path';
 import { WorkspaceExecutor } from './workspace-executor';
-import { GitSyncService } from './git-sync-service';
 import {
   ToolRequestPayload,
   ToolResultPayload,
@@ -13,23 +12,16 @@ export interface AuthenticatedToolContext {
   actorId: string;
   actorRole: string;
   authenticationSessionId?: string;
-  oauthToken?: string;
 }
 
 export class KAREToolGate {
   private policy: ToolGatePolicy;
   private executor: WorkspaceExecutor;
-  private gitSync: GitSyncService;
 
-  constructor(
-    policy: ToolGatePolicy = TEST_002A_POLICY,
-    executor?: WorkspaceExecutor,
-    gitSync?: GitSyncService
-  ) {
+  constructor(policy: ToolGatePolicy = TEST_002A_POLICY, executor?: WorkspaceExecutor) {
     this.policy = policy;
     const rootDir = process.env['WORKSPACE_ROOT'] || process.cwd();
     this.executor = executor || new WorkspaceExecutor({ workspaceRoot: rootDir });
-    this.gitSync = gitSync || new GitSyncService({ workspaceRoot: rootDir });
   }
 
   private resolveWorkspacePath(requestedPath: string): string {
@@ -92,13 +84,9 @@ export class KAREToolGate {
 
   public async processRequest(
     request: ToolRequestPayload,
-    context?: AuthenticatedToolContext
+    _context?: AuthenticatedToolContext
   ): Promise<ToolResultPayload> {
     const timestamp = Date.now();
-
-    if (context?.oauthToken) {
-      this.gitSync.setOAuthToken(context.oauthToken);
-    }
 
     if (request.action === 'FS_LIST' || request.action === 'SHELL_INSPECT') {
       return {
@@ -143,7 +131,7 @@ export class KAREToolGate {
       try {
         absolutePath = this.resolveWorkspacePath(request.targetPath);
         relativePath = path.relative(this.executor.workspaceRoot, absolutePath);
-      } catch (err) {
+      } catch {
         return {
           requestId: request.requestId,
           timestamp,
@@ -196,37 +184,6 @@ export class KAREToolGate {
         };
       }
 
-      if (request.action === 'GIT_PULL') {
-        const pullResult = await this.gitSync.pullLatest();
-        return {
-          requestId: request.requestId,
-          timestamp: Date.now(),
-          status: pullResult.success ? 'TOOL_COMPLETED' : 'TOOL_FAILED',
-          exitCode: pullResult.success ? 0 : 1,
-          stdout: pullResult.output,
-          stderr: pullResult.success ? '' : pullResult.output,
-        };
-      }
-
-      if (request.action === 'GIT_PUSH') {
-        const message = request.commitMessage || 'feat(jarvis): automated workspace commit';
-        const targetFiles = request.targetFiles || ['.'];
-        const pushResult = await this.gitSync.commitAndPush(message, targetFiles);
-        return {
-          requestId: request.requestId,
-          timestamp: Date.now(),
-          status: pushResult.success ? 'TOOL_COMPLETED' : 'TOOL_FAILED',
-          exitCode: pushResult.success ? 0 : 1,
-          stdout: pushResult.output,
-          stderr: pushResult.success ? '' : pushResult.output,
-        };
-      }
-
-      if (request.action === 'GIT_STATUS') {
-        const statusOutput = await this.gitSync.getStatus();
-        return this.completedResult(request.requestId, statusOutput);
-      }
-
       return {
         requestId: request.requestId,
         timestamp: Date.now(),
@@ -236,7 +193,7 @@ export class KAREToolGate {
         stderr: '',
         errorMessage: `Capability '${request.action}' is not executable.`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (controller.signal.aborted) {
         return {
           requestId: request.requestId,
@@ -250,6 +207,11 @@ export class KAREToolGate {
         };
       }
 
+      const errorCode =
+        error !== null && typeof error === 'object' && 'code' in error
+          ? String((error as { code: unknown }).code)
+          : '';
+
       return {
         requestId: request.requestId,
         timestamp: Date.now(),
@@ -258,7 +220,7 @@ export class KAREToolGate {
         stdout: '',
         stderr: '',
         affectedPath: relativePath,
-        errorMessage: error.code === 'ENOENT' ? 'FILE_NOT_FOUND' : 'EXECUTION_ERROR',
+        errorMessage: errorCode === 'ENOENT' ? 'FILE_NOT_FOUND' : 'EXECUTION_ERROR',
       };
     } finally {
       clearTimeout(timeout);
