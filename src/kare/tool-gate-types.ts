@@ -3,10 +3,7 @@ export type ToolAction =
   | 'FS_EXISTS'
   | 'FS_LIST'
   | 'SHELL_INSPECT'
-  | 'SANDBOX_EDIT'
-  | 'GIT_PULL'
-  | 'GIT_PUSH'
-  | 'GIT_STATUS';
+  | 'SANDBOX_EDIT';
 
 export type ToolExecutionStatus =
   | 'TOOL_REQUESTED'
@@ -55,9 +52,6 @@ export const TEST_002A_POLICY: ToolGatePolicy = {
     'FS_EXISTS',
     'FS_LIST',
     'SHELL_INSPECT',
-    'GIT_PULL',
-    'GIT_PUSH',
-    'GIT_STATUS',
   ],
   protectedPaths: [
     '.env',
