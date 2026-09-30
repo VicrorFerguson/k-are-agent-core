@@ -214,11 +214,7 @@ export class AgentGateway {
     return chosen;
   }
 
-  async execute(input: {
-    task: unknown;
-    scopes: string[];
-    actorId: string;
-  }): Promise<AgentResult> {
+  async execute(input: { task: unknown; scopes: string[]; actorId: string }): Promise<AgentResult> {
     const parsed = AgentTaskSchema.safeParse(input.task);
     if (!parsed.success) {
       throw new KareError("invalid_input", "Gateway task failed schema validation.", {
@@ -263,7 +259,9 @@ export class AgentGateway {
               ok: false,
               outcome: "rejected",
               summary: "malformed agent response rejected by validation",
-              detail: validated.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+              detail: validated.error.issues
+                .map((i) => `${i.path.join(".")}: ${i.message}`)
+                .join("; "),
             };
       } catch (error) {
         last = {

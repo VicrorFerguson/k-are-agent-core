@@ -1,9 +1,9 @@
 # K-ARE Zero-Hardcoding Audit (KF-ARCH-INVARIANT-001)
 
-- Audit ID: `zh-audit-mu41mrul`
-- Executed: 2026-09-16T11:54:47.037Z
+- Audit ID: `zh-audit-muo48t1l`
+- Executed: 2026-09-30T13:03:17.769Z
 - Scanner: kare-zero-hardcoding-scanner v1.1.0
-- Scope: src/kare, src/routes, scripts (28 files)
+- Scope: src/kare, src/routes, scripts (29 files)
 - Findings: 7 · Violations: 0
 - **Status: PASS**
 

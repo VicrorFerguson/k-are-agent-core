@@ -25,12 +25,7 @@ export const TaskStateSchema = z.enum([
 ]);
 export type TaskState = z.infer<typeof TaskStateSchema>;
 
-export const TERMINAL_TASK_STATES: TaskState[] = [
-  "COMPLETED",
-  "FAILED",
-  "ROLLED_BACK",
-  "REJECTED",
-];
+export const TERMINAL_TASK_STATES: TaskState[] = ["COMPLETED", "FAILED", "ROLLED_BACK", "REJECTED"];
 
 /** --------------------------------------------------------- capabilities */
 export const CapabilityIdSchema = z
@@ -124,7 +119,6 @@ export const PersistencePolicySchema = z.object({
   auditHistoryLimit: z.number().int().min(1),
 });
 export type PersistencePolicy = z.infer<typeof PersistencePolicySchema>;
-
 
 /** Identity/scopes the server API boundary acts with (configuration, not source). */
 export const ApiBoundarySchema = z.object({

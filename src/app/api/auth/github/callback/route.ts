@@ -1,21 +1,21 @@
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const code = searchParams.get('code');
+  const code = searchParams.get("code");
 
   if (!code) {
-    return Response.json({ error: 'Missing authorization code' }, { status: 400 });
+    return Response.json({ error: "Missing authorization code" }, { status: 400 });
   }
 
-  const clientId = process.env['GITHUB_CLIENT_ID'];
-  const clientSecret = process.env['GITHUB_CLIENT_SECRET'];
+  const clientId = process.env["GITHUB_CLIENT_ID"];
+  const clientSecret = process.env["GITHUB_CLIENT_SECRET"];
 
   try {
     // 1. Exchange code for GitHub Access Token
-    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
+    const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify({
         client_id: clientId,
@@ -26,16 +26,16 @@ export async function GET(request: Request) {
 
     const tokenData = await tokenResponse.json();
     if (tokenData.error) {
-      throw new Error(tokenData.error_description || 'Failed to exchange token');
+      throw new Error(tokenData.error_description || "Failed to exchange token");
     }
 
     const accessToken = tokenData.access_token;
 
     // 2. Fetch authenticated GitHub user details
-    const userResponse = await fetch('https://api.github.com/user', {
+    const userResponse = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        'User-Agent': 'JARVIS-KARE-Agent',
+        "User-Agent": "JARVIS-KARE-Agent",
       },
     });
 
@@ -58,9 +58,12 @@ export async function GET(request: Request) {
     `;
 
     return new Response(htmlResponse, {
-      headers: { 'Content-Type': 'text/html' },
+      headers: { "Content-Type": "text/html" },
     });
   } catch (err: any) {
-    return Response.json({ error: err instanceof Error ? err.message : 'GitHub authentication failed' }, { status: 500 });
+    return Response.json(
+      { error: err instanceof Error ? err.message : "GitHub authentication failed" },
+      { status: 500 },
+    );
   }
 }

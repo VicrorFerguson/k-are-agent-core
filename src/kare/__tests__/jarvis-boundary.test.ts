@@ -43,7 +43,9 @@ describe("JARVIS boundary + security posture", () => {
     for (const f of runtimeFiles) {
       if (f.includes("__tests__")) continue;
       const text = readFileSync(f, "utf8");
-      expect(text, f).not.toMatch(/child_process|\bnew Function\(|\beval\(|writeFileSync|process\.exit/);
+      expect(text, f).not.toMatch(
+        /child_process|\bnew Function\(|\beval\(|writeFileSync|process\.exit/,
+      );
     }
   });
 

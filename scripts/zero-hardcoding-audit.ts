@@ -25,21 +25,72 @@ export interface Finding {
 export const SCANNER = { name: "kare-zero-hardcoding-scanner", version: "1.1.0" };
 
 const RULES: Array<{ rule: string; re: RegExp; remediation: string }> = [
-  { rule: "absolute-url", re: /['"`]https?:\/\/[^'"`]+['"`]/, remediation: "move endpoint to configuration (endpointRef)" },
-  { rule: "operational-numeric-assignment", re: /\b(timeoutMs|maxAttempts|retryCount|retries|initialBackoffMs|backoffMultiplier|failureThreshold|openDurationMs|halfOpenProbes|maxCorrectionAttempts|correctionBudget|ttl|ttlMs|pollIntervalMs|cacheTtl|minSecretLength|riskThreshold)\s*[=:]\s*-?\d+/, remediation: "read the value from the versioned configuration document" },
-  { rule: "operational-identifier-literal", re: /\b(provider|model|modelId|endpoint|endpointRef|agentId|policyRef|credentialRef)\s*[=:]\s*['"`][^'"`]+['"`]/, remediation: "resolve the identifier through configuration/policy" },
-  { rule: "semantic-threshold-comparison", re: /\b(attempt|attempts|correctionsUsed|failures|retries)\b\s*(>=|>|<|<=)\s*\d+/, remediation: "compare against a configured policy value" },
-  { rule: "numeric-default-argument", re: /=\s*\(\s*\)\s*=>\s*\d+|\w+\s*(?:\?\?|\|\|)\s*\d{2,}/, remediation: "remove hidden numeric fallback; fail closed instead" },
-  { rule: "operational-string-fallback", re: /(?:\?\?|\|\|)\s*['"`](?:endpoint|provider|model|policy|https?)[^'"`]*['"`]/, remediation: "remove hidden fallback; fail closed instead" },
+  {
+    rule: "absolute-url",
+    re: /['"`]https?:\/\/[^'"`]+['"`]/,
+    remediation: "move endpoint to configuration (endpointRef)",
+  },
+  {
+    rule: "operational-numeric-assignment",
+    re: /\b(timeoutMs|maxAttempts|retryCount|retries|initialBackoffMs|backoffMultiplier|failureThreshold|openDurationMs|halfOpenProbes|maxCorrectionAttempts|correctionBudget|ttl|ttlMs|pollIntervalMs|cacheTtl|minSecretLength|riskThreshold)\s*[=:]\s*-?\d+/,
+    remediation: "read the value from the versioned configuration document",
+  },
+  {
+    rule: "operational-identifier-literal",
+    re: /\b(provider|model|modelId|endpoint|endpointRef|agentId|policyRef|credentialRef)\s*[=:]\s*['"`][^'"`]+['"`]/,
+    remediation: "resolve the identifier through configuration/policy",
+  },
+  {
+    rule: "semantic-threshold-comparison",
+    re: /\b(attempt|attempts|correctionsUsed|failures|retries)\b\s*(>=|>|<|<=)\s*\d+/,
+    remediation: "compare against a configured policy value",
+  },
+  {
+    rule: "numeric-default-argument",
+    re: /=\s*\(\s*\)\s*=>\s*\d+|\w+\s*(?:\?\?|\|\|)\s*\d{2,}/,
+    remediation: "remove hidden numeric fallback; fail closed instead",
+  },
+  {
+    rule: "operational-string-fallback",
+    re: /(?:\?\?|\|\|)\s*['"`](?:endpoint|provider|model|policy|https?)[^'"`]*['"`]/,
+    remediation: "remove hidden fallback; fail closed instead",
+  },
 ];
 
 /** Explicitly classified exemptions. Nothing here may be operational behaviour. */
-const EXEMPTIONS: Array<{ file: RegExp; rule?: string; classification: Classification; why: string }> = [
-  { file: /src\/kare\/invariants\.ts$/, classification: "PROTECTED_INVARIANT", why: "security/architecture invariants; deliberately non-overridable" },
-  { file: /src\/kare\/domain\.ts$/, classification: "MUTABLE_CONFIGURATION", why: "schema bounds (zod validation), not operational values" },
-  { file: /src\/kare\/config\.ts$/, rule: "operational-identifier-literal", classification: "BOOTSTRAP_REQUIREMENT", why: "supported config schema versions; required to interpret the document" },
-  { file: /src\/kare\/runtime\.ts$/, rule: "operational-identifier-literal", classification: "BOOTSTRAP_REQUIREMENT", why: "configuration document location only" },
-  { file: /__tests__|\.test\.ts$/, classification: "MUTABLE_CONFIGURATION", why: "test fixtures are supplied as configuration documents, never runtime defaults" },
+const EXEMPTIONS: Array<{
+  file: RegExp;
+  rule?: string;
+  classification: Classification;
+  why: string;
+}> = [
+  {
+    file: /src\/kare\/invariants\.ts$/,
+    classification: "PROTECTED_INVARIANT",
+    why: "security/architecture invariants; deliberately non-overridable",
+  },
+  {
+    file: /src\/kare\/domain\.ts$/,
+    classification: "MUTABLE_CONFIGURATION",
+    why: "schema bounds (zod validation), not operational values",
+  },
+  {
+    file: /src\/kare\/config\.ts$/,
+    rule: "operational-identifier-literal",
+    classification: "BOOTSTRAP_REQUIREMENT",
+    why: "supported config schema versions; required to interpret the document",
+  },
+  {
+    file: /src\/kare\/runtime\.ts$/,
+    rule: "operational-identifier-literal",
+    classification: "BOOTSTRAP_REQUIREMENT",
+    why: "configuration document location only",
+  },
+  {
+    file: /__tests__|\.test\.ts$/,
+    classification: "MUTABLE_CONFIGURATION",
+    why: "test fixtures are supplied as configuration documents, never runtime defaults",
+  },
 ];
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -102,7 +153,10 @@ export function writeArtifacts(result: ReturnType<typeof runAudit>) {
   mkdirSync("docs", { recursive: true });
   writeFileSync("docs/zero-hardcoding-audit.json", JSON.stringify(result, null, 2) + "\n");
   const rows = result.findings
-    .map((f) => `| ${f.id} | \`${f.file}:${f.line}\` | ${f.rule} | ${f.classification} | ${f.remediation} |`)
+    .map(
+      (f) =>
+        `| ${f.id} | \`${f.file}:${f.line}\` | ${f.rule} | ${f.classification} | ${f.remediation} |`,
+    )
     .join("\n");
   writeFileSync(
     "docs/zero-hardcoding-audit.md",

@@ -12,7 +12,11 @@ function harness() {
   const gateway = new CredentialGateway(
     manager,
     audit,
-    { async validate({ secret, minSecretLength }) { return { ok: secret.length >= minSecretLength }; } },
+    {
+      async validate({ secret, minSecretLength }) {
+        return { ok: secret.length >= minSecretLength };
+      },
+    },
     () => ({ minSecretLength: 16, allowedNamespaces: ["kare-dev"] }),
   );
   return { audit, manager, gateway };
@@ -85,6 +89,8 @@ describe("credential gateway", () => {
     const r = createRuntime(provider(doc()));
     const record = await r.credentials.connect(request({ secret: SECRET }));
     expect(record.namespace).toBe("kare-dev");
-    await expect(r.credentials.connect(request({ namespace: "nope", secret: SECRET }))).rejects.toThrow();
+    await expect(
+      r.credentials.connect(request({ namespace: "nope", secret: SECRET })),
+    ).rejects.toThrow();
   });
 });
