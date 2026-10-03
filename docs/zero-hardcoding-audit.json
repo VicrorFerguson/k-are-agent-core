@@ -1,6 +1,6 @@
 {
-  "auditId": "zh-audit-muo48t1l",
-  "timestamp": "2026-09-30T13:03:17.769Z",
+  "auditId": "zh-audit-musiv64o",
+  "timestamp": "2026-10-03T15:03:40.488Z",
   "invariant": "KF-ARCH-INVARIANT-001",
   "scanner": {
     "name": "kare-zero-hardcoding-scanner",
@@ -8,10 +8,11 @@
   },
   "scope": [
     "src/kare",
+    "src/lib",
     "src/routes",
     "scripts"
   ],
-  "filesScanned": 29,
+  "filesScanned": 34,
   "findings": [
     {
       "id": "ZH-001",
@@ -25,7 +26,7 @@
     {
       "id": "ZH-002",
       "file": "src/kare/__tests__/credentials.test.ts",
-      "line": 16,
+      "line": 20,
       "snippet": "() => ({ minSecretLength: 16, allowedNamespaces: [\"kare-dev\"] }),",
       "rule": "operational-numeric-assignment",
       "classification": "MUTABLE_CONFIGURATION",
@@ -34,7 +35,7 @@
     {
       "id": "ZH-003",
       "file": "src/kare/__tests__/credentials.test.ts",
-      "line": 22,
+      "line": 26,
       "snippet": "provider: \"acme\",",
       "rule": "operational-identifier-literal",
       "classification": "MUTABLE_CONFIGURATION",
@@ -43,7 +44,7 @@
     {
       "id": "ZH-004",
       "file": "src/kare/__tests__/credentials.test.ts",
-      "line": 55,
+      "line": 59,
       "snippet": "const out = redactMetadata({ apiKey: SECRET, token: SECRET, credentialRef: \"cred_x\" });",
       "rule": "operational-identifier-literal",
       "classification": "MUTABLE_CONFIGURATION",
@@ -52,7 +53,7 @@
     {
       "id": "ZH-005",
       "file": "src/kare/__tests__/credentials.test.ts",
-      "line": 76,
+      "line": 80,
       "snippet": "await expect(gateway.connect({ provider: \"a\" })).rejects.toThrowError(/validation/);",
       "rule": "operational-identifier-literal",
       "classification": "MUTABLE_CONFIGURATION",
@@ -61,7 +62,7 @@
     {
       "id": "ZH-006",
       "file": "src/kare/__tests__/gateway.test.ts",
-      "line": 125,
+      "line": 152,
       "snippet": "agentId: \"kare-analyzer\",",
       "rule": "operational-identifier-literal",
       "classification": "MUTABLE_CONFIGURATION",
