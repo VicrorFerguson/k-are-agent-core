@@ -1,9 +1,9 @@
 # K-ARE Zero-Hardcoding Audit (KF-ARCH-INVARIANT-001)
 
-- Audit ID: `zh-audit-muo48t1l`
-- Executed: 2026-09-30T13:03:17.769Z
+- Audit ID: `zh-audit-musiv64o`
+- Executed: 2026-10-03T15:03:40.488Z
 - Scanner: kare-zero-hardcoding-scanner v1.1.0
-- Scope: src/kare, src/routes, scripts (29 files)
+- Scope: src/kare, src/lib, src/routes, scripts (34 files)
 - Findings: 7 · Violations: 0
 - **Status: PASS**
 
@@ -30,9 +30,9 @@ which fails closed when the document is missing or invalid.
 | ID | Location | Rule | Classification | Remediation / exemption |
 | --- | --- | --- | --- | --- |
 | ZH-001 | `src/kare/__tests__/config.test.ts:70` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
-| ZH-002 | `src/kare/__tests__/credentials.test.ts:16` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
-| ZH-003 | `src/kare/__tests__/credentials.test.ts:22` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
-| ZH-004 | `src/kare/__tests__/credentials.test.ts:55` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
-| ZH-005 | `src/kare/__tests__/credentials.test.ts:76` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
-| ZH-006 | `src/kare/__tests__/gateway.test.ts:125` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-002 | `src/kare/__tests__/credentials.test.ts:20` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-003 | `src/kare/__tests__/credentials.test.ts:26` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-004 | `src/kare/__tests__/credentials.test.ts:59` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-005 | `src/kare/__tests__/credentials.test.ts:80` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
+| ZH-006 | `src/kare/__tests__/gateway.test.ts:152` | operational-identifier-literal | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
 | ZH-007 | `src/kare/__tests__/orchestrator.test.ts:123` | operational-numeric-assignment | MUTABLE_CONFIGURATION | exempt: test fixtures are supplied as configuration documents, never runtime defaults |
